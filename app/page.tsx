@@ -4,12 +4,21 @@ import { getRootCategories, getSubcategoryCount, getButtonCount } from '@/lib/ca
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import HeroBallpit from '@/components/ui/HeroBallpit'
 import { CustomRequestCTA } from '@/components/ui/CustomRequestCTA'
+import ShopNowButton from '@/components/ui/ShopNowButton'
 import { ShoppingBag, Truck, Heart } from 'lucide-react'
+import type { Category } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
+type CategoryWithCounts = {
+  category: Category
+  href: string
+  subcategoryCount: number
+  buttonCount: number
+}
+
 export default async function HomePage() {
-  let categoriesWithCounts: any[] = []
+  let categoriesWithCounts: CategoryWithCounts[] = []
 
   try {
     const rootCategories = await getRootCategories()
@@ -79,13 +88,7 @@ export default async function HomePage() {
               </div>
 
               {/* CTA Button */}
-              <Link
-                href="#categories"
-                className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-full text-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                Shop Now
-              </Link>
+              <ShopNowButton />
             </div>
           </div>
         </div>
