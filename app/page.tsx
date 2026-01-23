@@ -6,6 +6,8 @@ import HeroBallpit from '@/components/ui/HeroBallpit'
 import { CustomRequestCTA } from '@/components/ui/CustomRequestCTA'
 import { ShoppingBag, Truck, Heart } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const rootCategories = await getRootCategories()
 

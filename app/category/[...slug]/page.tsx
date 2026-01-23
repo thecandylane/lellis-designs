@@ -6,6 +6,8 @@ import CategoryBreadcrumb from '@/components/ui/CategoryBreadcrumb'
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import CategoryContent from './CategoryContent'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {
   params: Promise<{ slug: string[] }>
 }
