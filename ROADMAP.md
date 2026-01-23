@@ -16,11 +16,10 @@
 - [ ] Test complete checkout flow locally
 - [ ] Test all email notifications
 
-### Railway Account Setup
-- [ ] Create Railway account (under your management)
-- [ ] Create new project for L. Ellis Designs
-- [ ] Add PostgreSQL service
-- [ ] Note the DATABASE_URL for later
+### Vercel Account Setup
+- [x] Vercel project already configured (auto-deploys from GitHub)
+- [x] Neon PostgreSQL database connected
+- [x] DATABASE_URL configured in Vercel environment
 
 ### Prepare for Meeting
 - [ ] List of questions for client (see below)
@@ -100,26 +99,25 @@ Walk through:
 
 ## Phase 3: Deployment (You Do After Meeting)
 
-### Railway Deployment
+### Vercel Deployment
+
+The project auto-deploys from the GitHub main branch. Just push your changes:
 
 ```bash
-# 1. Push code to GitHub (if not already)
 git add .
 git commit -m "Prepare for production deployment"
 git push origin main
-
-# 2. In Railway Dashboard:
-# - Connect GitHub repo
-# - Railway will auto-detect Next.js
 ```
+
+Vercel will automatically build and deploy.
 
 ### Environment Variables
 
-Set these in Railway → Variables:
+Set these in Vercel Dashboard → Settings → Environment Variables:
 
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | (Auto-set by Railway PostgreSQL) |
+| `DATABASE_URL` | (Auto-set by Neon PostgreSQL) |
 | `PAYLOAD_SECRET` | `openssl rand -base64 32` |
 | `STRIPE_SECRET_KEY` | Client's `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | (Set after webhook creation) |
@@ -143,10 +141,10 @@ Add these DNS records at registrar:
 
 | Type | Name | Value |
 |------|------|-------|
-| CNAME | @ | Railway-provided URL |
-| CNAME | www | Railway-provided URL |
+| CNAME | @ | cname.vercel-dns.com |
+| CNAME | www | cname.vercel-dns.com |
 
-Or use Railway's custom nameservers.
+See Vercel Domains documentation for apex domain setup.
 
 ### Resend Domain Verification
 
@@ -220,8 +218,8 @@ Add DNS records Resend provides (typically TXT and MX records).
 
 ### Your Responsibilities
 
-- [ ] Set up monthly invoicing for hosting (~$75-100/mo suggested)
-- [ ] Monitor Railway for issues
+- [ ] Set up monthly invoicing for hosting
+- [ ] Monitor Vercel for issues
 - [ ] Respond to support requests
 - [ ] Apply security updates as needed
 
@@ -241,17 +239,17 @@ Add DNS records Resend provides (typically TXT and MX records).
 
 | Environment | URL |
 |-------------|-----|
-| Production Site | `https://domain.com` |
-| Production Admin | `https://domain.com/admin` |
-| Railway Dashboard | `https://railway.app/project/xxx` |
+| Production Site | `https://lellisdesigns.com` |
+| Production Admin | `https://lellisdesigns.com/admin` |
+| Vercel Dashboard | `https://vercel.com/dashboard` |
 | Stripe Dashboard | `https://dashboard.stripe.com` |
 | Resend Dashboard | `https://resend.com/emails` |
 
 ### Emergency Contacts
 
-- Railway Status: https://status.railway.app
+- Vercel Status: https://www.vercel-status.com
+- Neon Status: https://neonstatus.com
 - Stripe Status: https://status.stripe.com
-- Your Contact: [your email/phone]
 
 ---
 

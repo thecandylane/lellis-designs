@@ -1,6 +1,7 @@
 import { buildConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const sharp = require('sharp')
 import path from 'path'
@@ -48,6 +49,19 @@ export default buildConfig({
     ContactRequests,
   ],
   globals: [SiteSettings],
+  plugins: [
+    // Cloud storage for media files (only enabled when BLOB token is present)
+    ...(process.env.BLOB_READ_WRITE_TOKEN
+      ? [
+          vercelBlobStorage({
+            collections: {
+              media: true,
+            },
+            token: process.env.BLOB_READ_WRITE_TOKEN,
+          }),
+        ]
+      : []),
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || (() => {
     if (process.env.NODE_ENV === 'production') {

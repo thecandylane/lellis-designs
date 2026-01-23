@@ -257,6 +257,17 @@ export const CustomRequests: CollectionConfig = {
       },
     },
 
+    // Conversion tracking
+    {
+      name: 'convertedOrderId',
+      type: 'relationship',
+      relationTo: 'orders',
+      admin: {
+        description: 'Link to the order created from this request',
+        readOnly: true,
+      },
+    },
+
     // Admin-only fields
     {
       name: 'adminSection',

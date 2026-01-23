@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic'
 // Type for Payload order document
 type PayloadOrder = {
   id: string
+  orderType?: 'standard' | 'custom' | null
+  customRequestId?: string | { id: string } | null
   stripeSessionId?: string | null
   customerEmail: string
   customerName?: string | null
@@ -30,6 +32,10 @@ type PayloadOrder = {
 function toOrder(doc: PayloadOrder): Order {
   return {
     id: doc.id,
+    order_type: doc.orderType || 'standard',
+    custom_request_id: typeof doc.customRequestId === 'object'
+      ? doc.customRequestId?.id || null
+      : doc.customRequestId || null,
     stripe_session_id: doc.stripeSessionId || null,
     customer_email: doc.customerEmail,
     customer_name: doc.customerName || null,

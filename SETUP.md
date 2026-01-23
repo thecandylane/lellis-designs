@@ -117,7 +117,15 @@ Copy the `whsec_...` secret to `STRIPE_WEBHOOK_SECRET` in `.env.local`.
 2. Connect to your GitHub repository
 3. Vercel will auto-detect Next.js
 
-### 3. Environment Variables
+### 3. Vercel Blob Storage Setup
+
+1. In Vercel Dashboard → Storage → Create Database
+2. Select "Blob" → Create
+3. Copy the `BLOB_READ_WRITE_TOKEN` from the `.env.local` tab
+
+This stores all product images in Vercel's cloud (1GB free, then pay-as-you-go).
+
+### 4. Environment Variables
 
 In Vercel → Settings → Environment Variables, add:
 
@@ -125,6 +133,7 @@ In Vercel → Settings → Environment Variables, add:
 |----------|-------|-------|
 | `DATABASE_URL` | Neon connection string | From Neon dashboard |
 | `PAYLOAD_SECRET` | Generate new 32+ char string | **Different from dev** |
+| `BLOB_READ_WRITE_TOKEN` | From Vercel Blob | **Required for images** |
 | `STRIPE_SECRET_KEY` | `sk_live_...` | Client's live key |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | From Stripe dashboard |
 | `RESEND_API_KEY` | `re_...` | Client's Resend key |
@@ -134,7 +143,7 @@ In Vercel → Settings → Environment Variables, add:
 | `NEXT_PUBLIC_SITE_URL` | `https://domain.com` | Production URL |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` | Client's live key |
 
-### 4. Stripe Webhook (Production)
+### 5. Stripe Webhook (Production)
 
 1. Go to Stripe Dashboard → Developers → Webhooks
 2. Click **Add endpoint**
@@ -142,7 +151,7 @@ In Vercel → Settings → Environment Variables, add:
 4. Events: Select `checkout.session.completed`
 5. Copy **Signing secret** to `STRIPE_WEBHOOK_SECRET`
 
-### 5. Domain Setup
+### 6. Domain Setup
 
 1. Vercel → Settings → Domains
 2. Add custom domain
@@ -150,7 +159,7 @@ In Vercel → Settings → Environment Variables, add:
    - CNAME record pointing to `cname.vercel-dns.com`
    - Or use Vercel's nameservers
 
-### 6. First Deployment
+### 7. First Deployment
 
 Vercel auto-deploys on push to main branch. First deploy will:
 - Run database migrations automatically

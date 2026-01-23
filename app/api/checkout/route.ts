@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     const customizationsMetadata = items.map((item) => ({
       buttonId: item.buttonId,
       name: item.name,
+      imageUrl: item.imageUrl,
       quantity: item.quantity,
       personName: item.personName,
       personNumber: item.personNumber,

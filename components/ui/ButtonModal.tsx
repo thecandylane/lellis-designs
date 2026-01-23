@@ -112,11 +112,6 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
-              {quantity >= 5 && (
-                <p className="text-sm mt-1 font-medium" style={{ color }}>
-                  Bulk discount applied! $4 each for 5+
-                </p>
-              )}
             </div>
 
             {isCustomizable && (

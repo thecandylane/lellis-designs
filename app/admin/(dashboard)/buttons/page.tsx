@@ -214,12 +214,19 @@ function CategoryFilterLink({
   category,
   currentFilter,
   depth,
+  parentName,
 }: {
   category: CategoryNode
   currentFilter: string
   depth: number
+  parentName?: string
 }) {
   const isActive = currentFilter === category.id
+
+  // For depth >= 2, show "Parent > Category" to distinguish nested categories
+  const displayName = depth >= 2 && parentName
+    ? `${parentName} > ${category.name}`
+    : category.name
 
   return (
     <>
@@ -232,7 +239,7 @@ function CategoryFilterLink({
         }`}
       >
         {depth > 0 && '↳ '}
-        {category.name}
+        {displayName}
       </Link>
       {category.children.map((child) => (
         <CategoryFilterLink
@@ -240,6 +247,7 @@ function CategoryFilterLink({
           category={child}
           currentFilter={currentFilter}
           depth={depth + 1}
+          parentName={category.name}
         />
       ))}
     </>

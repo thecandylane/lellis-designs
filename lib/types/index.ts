@@ -55,6 +55,8 @@ export type CartItem = {
 
 export type Order = {
   id: string
+  order_type: 'standard' | 'custom'
+  custom_request_id: string | null
   stripe_session_id: string | null
   customer_email: string
   customer_name: string | null

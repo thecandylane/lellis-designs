@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Developer Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Technical documentation for the L. Ellis Designs codebase.
 
 ## Project Overview
 
@@ -68,6 +68,9 @@ STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY              # Get from resend.com
 ADMIN_EMAIL                 # Where order notifications go (default: orders@lellisdesigns.com)
 FROM_EMAIL                  # Sender address (default: L. Ellis Designs <orders@lellisdesigns.com>)
+
+# Cloud Storage (Vercel Blob - required for production)
+BLOB_READ_WRITE_TOKEN       # Get from Vercel Dashboard > Storage > Create Blob Store
 
 # Optional
 PICKUP_ADDRESS              # Default pickup address for "ready" emails

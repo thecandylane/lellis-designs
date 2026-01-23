@@ -10,6 +10,10 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  ShoppingBag,
+  CreditCard,
+  Banknote,
+  ExternalLink,
 } from 'lucide-react'
 
 type RequestActionsProps = {
@@ -18,6 +22,8 @@ type RequestActionsProps = {
   customerEmail: string
   customerPhone: string
   quotedPrice?: number
+  convertedOrderId?: string
+  deliveryPreference?: string
 }
 
 const STATUS_FLOW: Record<string, { next: string; label: string; icon: typeof CheckCircle }[]> = {
@@ -47,12 +53,19 @@ export default function RequestActions({
   customerEmail,
   customerPhone,
   quotedPrice,
+  convertedOrderId,
+  deliveryPreference,
 }: RequestActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showQuoteForm, setShowQuoteForm] = useState(false)
+  const [showOrderForm, setShowOrderForm] = useState(false)
   const [quoteAmount, setQuoteAmount] = useState(quotedPrice?.toString() || '')
   const [notes, setNotes] = useState('')
+  const [orderPaymentMethod, setOrderPaymentMethod] = useState<'stripe' | 'cash' | 'venmo' | 'other'>('stripe')
+  const [orderShippingMethod, setOrderShippingMethod] = useState<'pickup' | 'ups'>(
+    deliveryPreference === 'ship' ? 'ups' : 'pickup'
+  )
 
   const actions = STATUS_FLOW[currentStatus] || []
 
@@ -90,6 +103,44 @@ export default function RequestActions({
       'adminSection.quotedPrice': parseFloat(quoteAmount),
       'adminSection.notes': notes || undefined,
     })
+  }
+
+  const handleCreateOrder = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/custom-requests/${requestId}/convert-to-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentMethod: orderPaymentMethod,
+          shippingMethod: orderShippingMethod,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create order')
+      }
+
+      // If Stripe, open payment link in new tab
+      if (data.paymentUrl) {
+        window.open(data.paymentUrl, '_blank')
+        alert(`Order created! Payment link opened in new tab.\n\nYou can also send this link to the customer:\n${data.paymentUrl}`)
+      } else {
+        alert('Order created successfully!')
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error creating order:', error)
+      alert(error instanceof Error ? error.message : 'Failed to create order. Please try again.')
+    } finally {
+      setLoading(false)
+      setShowOrderForm(false)
+    }
   }
 
   if (currentStatus === 'completed' || currentStatus === 'declined') {
@@ -178,8 +229,158 @@ export default function RequestActions({
         </form>
       )}
 
+      {/* Create Order form */}
+      {showOrderForm && (
+        <form onSubmit={handleCreateOrder} className="bg-teal-50 border border-teal-200 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 text-teal-800 font-medium">
+            <ShoppingBag className="w-5 h-5" />
+            Create Order from Custom Request
+          </div>
+
+          {quotedPrice && (
+            <div className="text-sm text-gray-600 bg-white rounded p-2">
+              <span className="font-medium">Total:</span> ${quotedPrice.toFixed(2)}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Method
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setOrderPaymentMethod('stripe')}
+                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                  orderPaymentMethod === 'stripe'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-medium text-sm">Stripe</div>
+                  <div className="text-xs text-gray-500">Send payment link</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderPaymentMethod('cash')}
+                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                  orderPaymentMethod === 'cash'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Banknote className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-medium text-sm">Cash</div>
+                  <div className="text-xs text-gray-500">Already paid</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderPaymentMethod('venmo')}
+                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                  orderPaymentMethod === 'venmo'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <DollarSign className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-medium text-sm">Venmo</div>
+                  <div className="text-xs text-gray-500">Already paid</div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderPaymentMethod('other')}
+                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                  orderPaymentMethod === 'other'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <CheckCircle className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-medium text-sm">Other</div>
+                  <div className="text-xs text-gray-500">Mark as paid</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Delivery Method
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOrderShippingMethod('pickup')}
+                className={`flex-1 p-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  orderShippingMethod === 'pickup'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Local Pickup (Free)
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderShippingMethod('ups')}
+                className={`flex-1 p-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  orderShippingMethod === 'ups'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                UPS Shipping (+$8)
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShoppingBag className="w-4 h-4" />
+              )}
+              {orderPaymentMethod === 'stripe' ? 'Create Order & Payment Link' : 'Create Order (Paid)'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowOrderForm(false)}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Converted Order Link */}
+      {convertedOrderId && (
+        <div className="flex items-center gap-2 text-sm bg-green-50 text-green-800 px-3 py-2 rounded-lg">
+          <CheckCircle className="w-4 h-4" />
+          <span>Converted to order</span>
+          <a
+            href={`/admin/orders?status=all`}
+            className="inline-flex items-center gap-1 font-medium text-green-700 hover:text-green-900 underline"
+          >
+            View Order <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      )}
+
       {/* Status action buttons */}
-      {!showQuoteForm && actions.length > 0 && (
+      {!showQuoteForm && !showOrderForm && actions.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {actions.map((action) => {
             const Icon = action.icon
@@ -221,6 +422,18 @@ export default function RequestActions({
             )
           })}
         </div>
+      )}
+
+      {/* Create Order button - shown for approved status when not already converted */}
+      {!showQuoteForm && !showOrderForm && currentStatus === 'approved' && !convertedOrderId && quotedPrice && (
+        <button
+          onClick={() => setShowOrderForm(true)}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Create Order
+        </button>
       )}
 
       {/* Quoted price display */}

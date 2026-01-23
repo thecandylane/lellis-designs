@@ -59,6 +59,7 @@ type CustomRequest = {
     notes?: string
     followUpDate?: string
   }
+  convertedOrderId?: string | { id: string }
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -403,6 +404,12 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
           customerEmail={request.customerEmail}
           customerPhone={request.customerPhone}
           quotedPrice={request.adminSection?.quotedPrice}
+          convertedOrderId={
+            typeof request.convertedOrderId === 'object'
+              ? request.convertedOrderId?.id
+              : request.convertedOrderId
+          }
+          deliveryPreference={request.orderDetails.deliveryPreference}
         />
       </div>
     </div>

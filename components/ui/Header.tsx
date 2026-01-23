@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingCart, Menu, Home, Sparkles } from 'lucide-react'
@@ -20,7 +21,13 @@ const navLinks = [
 ]
 
 export default function Header() {
+  const [mounted, setMounted] = useState(false)
   const itemCount = useCart((state) => state.getItemCount())
+
+  // Only show cart count after hydration to prevent mismatch
+  useEffect(() => {
+    setMounted(true) // eslint-disable-line react-hooks/set-state-in-effect
+  }, [])
 
   return (
     <header className="bg-primary sticky top-0 z-50 shadow-md">
@@ -71,7 +78,7 @@ export default function Header() {
             aria-label="Shopping cart"
           >
             <ShoppingCart className="h-6 w-6" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-sm animate-in zoom-in duration-200">
                 {itemCount > 99 ? '99+' : itemCount}
               </span>
@@ -140,7 +147,7 @@ export default function Header() {
                   >
                     <ShoppingCart className="h-5 w-5" />
                     View Cart
-                    {itemCount > 0 && (
+                    {mounted && itemCount > 0 && (
                       <span className="ml-auto bg-primary-foreground/20 px-2 py-0.5 rounded-full text-sm">
                         {itemCount}
                       </span>

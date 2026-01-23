@@ -47,12 +47,15 @@ export async function POST(request: NextRequest) {
         })
 
         // Create button with the uploaded image
+        // Convert category ID to number for PostgreSQL
+        const categoryId = buttonData.categoryId ? Number(buttonData.categoryId) : undefined
+
         await payload.create({
           collection: 'buttons',
           data: {
             name: buttonData.name,
             image: media.id,
-            category: buttonData.categoryId || undefined,
+            category: categoryId,
             price: 5,
             active: true,
           },

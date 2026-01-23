@@ -17,9 +17,45 @@ export const Orders: CollectionConfig = {
   },
   fields: [
     {
+      name: 'orderType',
+      type: 'select',
+      defaultValue: 'standard',
+      options: [
+        { label: 'Standard Order', value: 'standard' },
+        { label: 'Custom Order', value: 'custom' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Standard orders come from cart; custom orders from custom requests',
+      },
+    },
+    {
+      name: 'customRequestId',
+      type: 'relationship',
+      relationTo: 'custom-requests',
+      admin: {
+        condition: (data) => data?.orderType === 'custom',
+        description: 'Link to the original custom request',
+      },
+    },
+    {
+      name: 'paymentMethod',
+      type: 'select',
+      defaultValue: 'stripe',
+      options: [
+        { label: 'Stripe', value: 'stripe' },
+        { label: 'Cash', value: 'cash' },
+        { label: 'Venmo', value: 'venmo' },
+        { label: 'Other', value: 'other' },
+      ],
+      admin: {
+        condition: (data) => data?.orderType === 'custom',
+        description: 'Payment method for custom orders',
+      },
+    },
+    {
       name: 'stripeSessionId',
       type: 'text',
-      unique: true,
       admin: {
         readOnly: true,
       },

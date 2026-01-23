@@ -4,6 +4,7 @@ import type { Where } from 'payload'
 import Link from 'next/link'
 import Image from 'next/image'
 import OrderActions from './OrderActions'
+import { Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ type SearchParams = Promise<{ status?: string }>
 // Type for Payload order document
 type PayloadOrder = {
   id: string
+  orderType?: 'standard' | 'custom' | null
+  customRequestId?: string | { id: string } | null
   stripeSessionId?: string | null
   customerEmail: string
   customerName?: string | null
@@ -33,6 +36,10 @@ type PayloadOrder = {
 function toOrder(doc: PayloadOrder): Order {
   return {
     id: doc.id,
+    order_type: doc.orderType || 'standard',
+    custom_request_id: typeof doc.customRequestId === 'object'
+      ? doc.customRequestId?.id || null
+      : doc.customRequestId || null,
     stripe_session_id: doc.stripeSessionId || null,
     customer_email: doc.customerEmail,
     customer_name: doc.customerName || null,
@@ -180,9 +187,17 @@ function OrderCard({ order }: { order: Order }) {
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <p className="font-semibold text-gray-900">
-              {order.customer_name || order.customer_email.split('@')[0]}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-gray-900">
+                {order.customer_name || order.customer_email.split('@')[0]}
+              </p>
+              {order.order_type === 'custom' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                  <Sparkles className="w-3 h-3" />
+                  Custom
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500">{order.customer_email}</p>
           </div>
         </div>
@@ -274,6 +289,19 @@ function OrderCard({ order }: { order: Order }) {
             </div>
           ))}
         </div>
+
+        {/* Custom Request Link */}
+        {order.order_type === 'custom' && order.custom_request_id && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <Link
+              href="/admin/requests"
+              className="inline-flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800"
+            >
+              <Sparkles className="w-4 h-4" />
+              View original custom request
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Actions Footer */}

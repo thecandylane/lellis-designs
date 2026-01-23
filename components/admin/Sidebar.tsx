@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { ClipboardList, Upload, Grid3X3, FolderOpen, Sparkles } from 'lucide-react'
+import { ClipboardList, Upload, Grid3X3, FolderOpen, Sparkles, Settings } from 'lucide-react'
 
 const navItems = [
   {
@@ -35,6 +35,12 @@ const navItems = [
     label: 'Categories',
     icon: FolderOpen,
     description: 'Organize buttons'
+  },
+  {
+    href: '/admin/settings',
+    label: 'Settings',
+    icon: Settings,
+    description: 'Business settings'
   },
 ]
 

@@ -363,14 +363,25 @@ export default function BulkUploadPage() {
           {results.every((r) => r.success) && (
             <div className="mt-4 p-4 bg-teal-50 rounded-lg">
               <p className="text-teal-700 font-medium">
-                All buttons uploaded successfully!{' '}
-                <Link
-                  href="/admin/collections/buttons"
-                  className="underline hover:text-teal-900"
-                >
-                  View all buttons →
-                </Link>
+                All buttons uploaded successfully!
               </p>
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={() => {
+                    setResults(null)
+                    setPendingButtons([])
+                  }}
+                  className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+                >
+                  Upload More Buttons
+                </button>
+                <Link
+                  href="/admin/dashboard"
+                  className="bg-white text-teal-700 border border-teal-300 px-4 py-2 rounded-lg hover:bg-teal-50 transition-colors"
+                >
+                  Back to Dashboard
+                </Link>
+              </div>
             </div>
           )}
         </div>

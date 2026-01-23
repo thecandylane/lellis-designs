@@ -18,7 +18,7 @@ type StatusUpdateRequest = {
   pickupInstructions?: string
 }
 
-export async function POST(
+async function handleStatusUpdate(
   request: NextRequest,
   { params }: { params: Params }
 ) {
@@ -114,3 +114,7 @@ export async function POST(
 
   return NextResponse.json({ success: true })
 }
+
+// Support both POST and PATCH methods
+export const POST = handleStatusUpdate
+export const PATCH = handleStatusUpdate

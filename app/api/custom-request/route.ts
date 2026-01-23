@@ -44,35 +44,40 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle file uploads
-    const referenceImages: { image: string; description: string }[] = []
+    const referenceImages: { image: number | string; description: string }[] = []
     const imageFiles = formData.getAll('images') as File[]
     const imageDescriptions = formData.getAll('imageDescriptions') as string[]
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
       if (file && file.size > 0) {
-        // Convert File to Buffer for Payload
-        const arrayBuffer = await file.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
+        try {
+          // Convert File to Buffer for Payload
+          const arrayBuffer = await file.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
 
-        // Upload to Payload media
-        const uploadedMedia = await payload.create({
-          collection: 'media',
-          data: {
-            alt: `Custom request reference from ${customerName}`,
-          },
-          file: {
-            data: buffer,
-            mimetype: file.type,
-            name: file.name,
-            size: file.size,
-          },
-        })
+          // Upload to Payload media
+          const uploadedMedia = await payload.create({
+            collection: 'media',
+            data: {
+              alt: `Custom request reference from ${customerName}`,
+            },
+            file: {
+              data: buffer,
+              mimetype: file.type,
+              name: file.name,
+              size: file.size,
+            },
+          })
 
-        referenceImages.push({
-          image: String(uploadedMedia.id),
-          description: imageDescriptions[i] || '',
-        })
+          referenceImages.push({
+            image: uploadedMedia.id,
+            description: imageDescriptions[i] || '',
+          })
+        } catch (uploadError) {
+          console.error(`Failed to upload image ${i + 1}:`, uploadError)
+          // Continue with other images instead of failing completely
+        }
       }
     }
 
@@ -88,13 +93,13 @@ export async function POST(request: NextRequest) {
         isRush,
         designDetails: {
           description: description.trim(),
-          eventType: eventType?.trim() || null,
-          colorPreferences: colorPreferences?.trim() || null,
+          eventType: eventType?.trim() || undefined,
+          colorPreferences: colorPreferences?.trim() || undefined,
         },
         textOptions: {
           wantsText: wantsText || 'no',
-          textContent: textContent?.trim() || null,
-          fontPreference: fontPreference || null,
+          textContent: textContent?.trim() || undefined,
+          fontPreference: fontPreference || undefined,
         },
         referenceImages,
         orderDetails: {
@@ -103,7 +108,7 @@ export async function POST(request: NextRequest) {
           isFlexibleDate: isFlexibleDate || 'somewhat',
           deliveryPreference: deliveryPreference || 'either',
         },
-        additionalInfo: additionalInfo?.trim() || null,
+        additionalInfo: additionalInfo?.trim() || undefined,
       },
     })
 
@@ -132,6 +137,12 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Custom request submission error:', error)
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return NextResponse.json(
       { error: 'Something went wrong. Please try again or contact us directly.' },
       { status: 500 }

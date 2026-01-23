@@ -38,7 +38,7 @@ const PLACEHOLDER_IMAGES: Record<string, { bg: string; fg: string; text: string 
 }
 
 // Cache for uploaded media IDs to avoid re-uploading
-const mediaCache: Map<string, string> = new Map()
+const mediaCache: Map<string, number> = new Map()
 
 /**
  * Download an image from URL and return as Buffer
@@ -74,7 +74,7 @@ function downloadImage(url: string): Promise<Buffer> {
 async function getOrCreateMedia(
   payload: Payload,
   imageKey: string
-): Promise<string> {
+): Promise<number> {
   // Check cache first
   if (mediaCache.has(imageKey)) {
     return mediaCache.get(imageKey)!
@@ -112,7 +112,7 @@ async function getOrCreateMedia(
       },
     })
 
-    const mediaId = String(media.id)
+    const mediaId = media.id as number
     console.log(`    ✅ Created media: ${mediaId}`)
     mediaCache.set(imageKey, mediaId)
 
