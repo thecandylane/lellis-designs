@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 1. Install dependencies                                     
+  pnpm install                                                  
+                                                                
+  # 2. Create .env.local with required variables                
+  cat > .env.local << 'EOF'                                     
+  # Supabase                                                    
+  NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co     
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key                   
+  SUPABASE_SERVICE_ROLE_KEY=your-service-role-key               
+                                                                
+  # Stripe                                                      
+  STRIPE_SECRET_KEY=sk_test_...                                 
+  STRIPE_WEBHOOK_SECRET=whsec_...                               
+                                                                
+  # Email (Resend)                                              
+  RESEND_API_KEY=re_...                                         
+  ADMIN_EMAIL=orders@lellisdesigns.com                          
+  FROM_EMAIL=L. Ellis Designs <orders@lellisdesigns.com>        
+                                                                
+  # Optional                                                    
+  PICKUP_ADDRESS=123 Main St, Baton Rouge, LA                   
+  NEXT_PUBLIC_SITE_URL=https://lellisdesigns.com                
+  EOF                                                           
+                                                                
+  # Start PostgreSQL (if not already running)                                                                                         
+  docker start lellis-postgres                                                                                                        
+                                                                                                                                      
+  # Start dev server                                                                                                                  
+  pnpm dev                                                                                                                            
+                                                                                                                                      
+  # Access at http://localhost:3000                                                                                                   
+                                                                                                                                      
+  Stopping:                                                                                                                           
+  # Stop dev server: Ctrl+C in terminal                                                                                               
+  # Stop PostgreSQL (optional - can leave running)                                                                                    
+  docker stop lellis-postgres                            
+  
+                       
+  # 4. In a separate terminal - Stripe webhook forwarding       
+  (required for checkout)                                       
+  stripe login                                                  
+  stripe listen --forward-to localhost:3000/api/webhooks/stripe 
+                                                                
+  # Copy the webhook secret from Stripe CLI output to           
+  STRIPE_WEBHOOK_SECRET                                         
+                                                                
+  # 5. Test checkout with these card numbers:                   
+  # Success: 4242 4242 4242 4242                                
+  # Decline: 4000 0000 0000 0002                                
+  # Any future expiry (12/34), any CVC (123)        
 
-## Getting Started
 
-First, run the development server:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   # Set up DATABASE_URL in .env.local first                                                                 
+  DATABASE_URL=postgresql://username:password@localhost:5432/lellis_designs                                 
+                                                                                                            
+  # Then run:                                                                                               
+  pnpm run seed              # Create test data                                                             
+  pnpm run seed:dry-run      # Preview what would be deleted                                                
+  pnpm run seed:clean        # Delete test data (with confirmation)                                         
+  pnpm run seed:clean:force  # Delete test data (no confirmation)             
+                                             
