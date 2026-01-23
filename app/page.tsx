@@ -9,23 +9,30 @@ import { ShoppingBag, Truck, Heart } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const rootCategories = await getRootCategories()
+  let categoriesWithCounts: any[] = []
 
-  // Get counts for each root category
-  const categoriesWithCounts = await Promise.all(
-    rootCategories.map(async (category) => {
-      const [subcategoryCount, buttonCount] = await Promise.all([
-        getSubcategoryCount(category.id),
-        getButtonCount(category.id)
-      ])
-      return {
-        category,
-        href: `/category/${category.slug}`,
-        subcategoryCount,
-        buttonCount
-      }
-    })
-  )
+  try {
+    const rootCategories = await getRootCategories()
+
+    // Get counts for each root category
+    categoriesWithCounts = await Promise.all(
+      rootCategories.map(async (category) => {
+        const [subcategoryCount, buttonCount] = await Promise.all([
+          getSubcategoryCount(category.id),
+          getButtonCount(category.id)
+        ])
+        return {
+          category,
+          href: `/category/${category.slug}`,
+          subcategoryCount,
+          buttonCount
+        }
+      })
+    )
+  } catch (error) {
+    // Database not initialized yet - show empty state
+    console.error('Database initialization pending:', error)
+  }
 
   return (
     <main className="min-h-screen bg-glow">
