@@ -1,262 +1,333 @@
-# L. Ellis Designs - Production Setup Guide
+# Development & Deployment Guide
 
-## Prerequisites
-
-- Supabase project created
-- Stripe account (with test mode for development)
-- Vercel account (or other hosting platform)
+This guide covers local development setup and production deployment. Use this as a template for similar e-commerce projects.
 
 ---
 
-## 1. Database Setup
+## Part 1: Local Development
 
-Run this SQL in Supabase Dashboard → SQL Editor:
+### Prerequisites
 
-```sql
--- Orders table
-CREATE TABLE orders (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  stripe_session_id text UNIQUE NOT NULL,
-  stripe_payment_intent_id text,
-  customer_email text NOT NULL,
-  needed_by_date date NOT NULL,
-  items jsonb NOT NULL,
-  total_amount_cents integer NOT NULL,
-  status text DEFAULT 'new' CHECK (status IN ('new', 'complete')),
-  ambassador_code text,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+- Node.js 20+
+- pnpm (`npm install -g pnpm`)
+- Docker (for PostgreSQL)
+- Stripe CLI (for webhook testing)
 
--- Ambassadors table
-CREATE TABLE ambassadors (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  code text UNIQUE NOT NULL,
-  email text,
-  active boolean DEFAULT true,
-  created_at timestamptz DEFAULT now()
-);
-
--- Contact requests table
-CREATE TABLE contact_requests (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  email text NOT NULL,
-  message text NOT NULL,
-  status text DEFAULT 'new' CHECK (status IN ('new', 'responded')),
-  created_at timestamptz DEFAULT now()
-);
-
--- Performance indexes
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_created_at ON orders(created_at DESC);
-CREATE INDEX idx_orders_ambassador_code ON orders(ambassador_code);
-CREATE INDEX idx_contact_requests_status ON contact_requests(status);
-CREATE INDEX idx_ambassadors_code ON ambassadors(code);
-
--- Enable Row Level Security
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ambassadors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contact_requests ENABLE ROW LEVEL SECURITY;
-```
-
----
-
-## 2. Create Admin User
-
-1. Go to **Supabase Dashboard → Authentication → Users**
-2. Click **Add User → Create New User**
-3. Enter owner's email and a strong password
-4. Save credentials securely
-
----
-
-## 3. Environment Variables
-
-### Required Variables
-
-| Variable | Description | Where to find |
-|----------|-------------|---------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Supabase → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key | Supabase → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Supabase → Settings → API |
-| `STRIPE_SECRET_KEY` | Stripe API secret key | Stripe → Developers → API keys |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | Stripe → Developers → Webhooks |
-
-### Local Development (.env.local)
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
----
-
-## 4. Stripe Webhook Setup
-
-### Local Development
+### 1. Database Setup
 
 ```bash
-# Install Stripe CLI
-# macOS: brew install stripe/stripe-cli/stripe
-# Linux: See https://stripe.com/docs/stripe-cli#install
+# Create and start PostgreSQL container
+docker run -d --name lellis-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=lellis_designs \
+  -p 5432:5432 \
+  postgres:16
 
-# Login
+# Verify it's running
+docker ps
+```
+
+**Managing the database:**
+```bash
+docker start lellis-postgres   # Start
+docker stop lellis-postgres    # Stop
+docker logs lellis-postgres    # View logs
+```
+
+### 2. Environment Configuration
+
+Create `.env.local`:
+
+```env
+# Database
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lellis_designs
+
+# Payload CMS (generate a random string)
+PAYLOAD_SECRET=generate-a-random-32-char-string-here
+
+# Stripe (use test keys for development)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_... # From Stripe CLI
+
+# Email (Resend)
+RESEND_API_KEY=re_...
+ADMIN_EMAIL=your@email.com
+FROM_EMAIL=Your Business <onboarding@resend.dev>
+
+# Optional
+PICKUP_ADDRESS=123 Main St, City, ST 12345
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### 3. Install & Run
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+```
+
+Visit http://localhost:3000/admin to create your first admin user.
+
+### 4. Stripe Webhook Testing
+
+In a separate terminal:
+
+```bash
+# Login to Stripe
 stripe login
 
-# Forward webhooks (keep this running while testing)
+# Forward webhooks to local server
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
-Copy the `whsec_...` secret to your `.env.local`
+Copy the `whsec_...` secret to `STRIPE_WEBHOOK_SECRET` in `.env.local`.
 
-### Production
-
-1. Deploy your app first
-2. Go to **Stripe Dashboard → Developers → Webhooks**
-3. Click **Add endpoint**
-4. URL: `https://yourdomain.com/api/webhooks/stripe`
-5. Events: Select `checkout.session.completed`
-6. Click **Add endpoint**
-7. Copy **Signing secret** to your production env vars
+**Test cards:**
+- Success: `4242 4242 4242 4242`
+- Decline: `4000 0000 0000 0002`
+- Any future expiry, any CVC
 
 ---
 
-## 5. Deployment (Vercel)
+## Part 2: Production Deployment (Railway)
 
-### Initial Setup
+### Prerequisites
+
+- Railway account (railway.app)
+- GitHub repository connected
+- Domain name ready
+- Client's Stripe account (live mode)
+- Client's Resend account with verified domain
+
+### 1. Railway Setup
+
+1. Create new project in Railway
+2. Add **PostgreSQL** service
+3. Add **GitHub Repo** service (your repo)
+
+### 2. Environment Variables
+
+In Railway → Variables, add:
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `DATABASE_URL` | Auto-set by Railway | PostgreSQL connection |
+| `PAYLOAD_SECRET` | Generate new 32+ char string | **Different from dev** |
+| `STRIPE_SECRET_KEY` | `sk_live_...` | Client's live key |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` | From Stripe dashboard |
+| `RESEND_API_KEY` | `re_...` | Client's Resend key |
+| `ADMIN_EMAIL` | Client's email | Order notifications |
+| `FROM_EMAIL` | `Business <orders@domain.com>` | Verified in Resend |
+| `PICKUP_ADDRESS` | Full address | For pickup orders |
+| `NEXT_PUBLIC_SITE_URL` | `https://domain.com` | Production URL |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` | Client's live key |
+
+### 3. Stripe Webhook (Production)
+
+1. Go to Stripe Dashboard → Developers → Webhooks
+2. Click **Add endpoint**
+3. URL: `https://yourdomain.com/api/webhooks/stripe`
+4. Events: Select `checkout.session.completed`
+5. Copy **Signing secret** to `STRIPE_WEBHOOK_SECRET`
+
+### 4. Domain Setup
+
+1. Railway → Settings → Domains
+2. Add custom domain
+3. Configure DNS:
+   - CNAME record pointing to Railway URL
+   - Or use Railway's nameservers
+
+### 5. First Deployment
+
+Railway auto-deploys on push to main branch. First deploy will:
+- Run database migrations automatically
+- Build the Next.js app
+- Start the server
+
+Visit `/admin` to create the production admin user.
+
+---
+
+## Part 3: Post-Deployment Checklist
+
+### Verify Core Flows
+
+- [ ] Homepage loads correctly
+- [ ] Categories display products
+- [ ] Add to cart works
+- [ ] Checkout completes (test with Stripe test mode first if needed)
+- [ ] Order appears in admin
+- [ ] Order status updates work
+- [ ] Emails send correctly
+
+### Admin Setup
+
+- [ ] Create admin user at `/admin`
+- [ ] Add root categories (cities/regions)
+- [ ] Add subcategories (schools/teams)
+- [ ] Upload initial products
+- [ ] Configure site settings (colors, business info)
+
+### Security Checklist
+
+- [ ] PAYLOAD_SECRET is unique and secure
+- [ ] All API routes require auth where needed
+- [ ] CORS configured for production domain
+- [ ] Rate limiting considered for public endpoints
+
+---
+
+## Part 4: Client Handoff
+
+### Accounts Client Needs to Create
+
+1. **Stripe Account**
+   - Client creates at stripe.com
+   - Verify business information
+   - Get live API keys
+
+2. **Resend Account**
+   - Client creates at resend.com
+   - Add and verify their domain
+   - Get API key
+
+3. **Domain Registration**
+   - Client purchases domain (Namecheap, Google Domains, etc.)
+   - You configure DNS to point to Railway
+
+### What You Manage
+
+- Railway hosting (bill client monthly)
+- Database backups
+- Code updates and maintenance
+
+### Client Training
+
+Provide walkthrough of:
+- `/admin` - Payload CMS for content
+- `/admin/orders` - Order fulfillment
+- `/admin/requests` - Custom quote requests
+- How to mark orders ready/shipped
+- How to add new products and categories
+
+---
+
+## Part 5: Replication Template
+
+To create a similar site for another client:
+
+### 1. Fork/Copy Repository
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
+# Clone this project
+git clone <this-repo> new-client-name
+cd new-client-name
 
-# Deploy
-vercel
+# Remove git history, start fresh
+rm -rf .git
+git init
 ```
 
-### Add Environment Variables
+### 2. Customize for Client
 
-In Vercel Dashboard → Your Project → Settings → Environment Variables:
+Files to update:
+- `app/page.tsx` - Homepage content, branding
+- `app/globals.css` - Brand colors (CSS variables)
+- `public/logo.png` - Client logo
+- `lib/store.ts` - Pricing tiers
+- `lib/email.ts` - Email templates
+- `payload.config.ts` - Admin branding
+- `.env.local` - All environment variables
 
-Add all variables from section 3 for Production environment.
+### 3. Database
 
-### Custom Domain
-
-1. Vercel Dashboard → Your Project → Settings → Domains
-2. Add your domain
-3. Update DNS records as instructed
-
----
-
-## 6. Post-Deployment Verification
-
-### Auth Flow
-- [ ] Visit `/admin` → redirected to `/admin/login`
-- [ ] Login with admin credentials → redirected to dashboard
-- [ ] Click Sign Out → redirected to login
-
-### Order Flow
-- [ ] Complete a test purchase (use Stripe test card `4242 4242 4242 4242`)
-- [ ] Check Stripe Dashboard for successful payment
-- [ ] Check `/admin/orders` for new order
-- [ ] View order details
-- [ ] Mark order as complete
-
-### Product Management
-- [ ] Create a new category
-- [ ] Create a new button in that category
-- [ ] Verify button appears on public site
-- [ ] Edit button, toggle active off
-- [ ] Verify button is hidden on public site
-
-### Contact Form
-- [ ] Submit contact form on `/contact`
-- [ ] Check `/admin/requests` for new request
-- [ ] Mark as responded
-
-### Ambassador Tracking
-- [ ] Create test ambassador in `/admin/ambassadors`
-- [ ] Visit site with `?ref=testcode`
-- [ ] Complete checkout
-- [ ] Verify order shows ambassador code
-
----
-
-## 7. Going Live Checklist
-
-### Stripe
-- [ ] Switch from test to live API keys
-- [ ] Create production webhook endpoint
-- [ ] Update `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in production
-
-### Security
-- [ ] Verify all admin routes require authentication
-- [ ] Ensure service role key is never exposed client-side
-- [ ] Set up Supabase email rate limiting (Auth → Settings)
-
-### Monitoring
-- [ ] Set up error tracking (Sentry, LogRocket, etc.)
-- [ ] Enable Vercel Analytics
-- [ ] Set up uptime monitoring
-
-### Backups
-- [ ] Enable Supabase Point-in-Time Recovery (paid plans)
-- [ ] Or schedule regular database exports
-
----
-
-## 8. Maintenance
-
-### Regular Tasks
-- Check for new orders daily
-- Respond to contact requests
-- Review ambassador performance monthly
-
-### Updates
+Create new PostgreSQL instance:
 ```bash
-# Update dependencies
-npm update
-
-# Check for security vulnerabilities
-npm audit
-
-# Fix vulnerabilities
-npm audit fix
+docker run -d --name newclient-postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=newclient_db \
+  -p 5433:5432 \  # Different port
+  postgres:16
 ```
+
+### 4. Stripe & Resend
+
+- Create new Stripe account or use client's
+- Set up new Resend domain
+- Update webhook endpoints
+
+### 5. Deploy
+
+- Create new Railway project
+- Connect new GitHub repo
+- Configure environment variables
+- Add custom domain
 
 ---
 
 ## Troubleshooting
 
-### "Unauthorized" errors on admin pages
-- Clear browser cookies and login again
-- Check that admin user exists in Supabase Auth
+### Database Connection Issues
 
-### Webhook not receiving events
-- Verify webhook URL is correct in Stripe Dashboard
-- Check webhook signing secret matches
-- Check Stripe webhook logs for errors
+```bash
+# Check if PostgreSQL is running
+docker ps | grep postgres
 
-### Orders not appearing
-- Check Stripe webhook logs
-- Verify `checkout.session.completed` event is enabled
-- Check Supabase logs for database errors
+# View PostgreSQL logs
+docker logs lellis-postgres
 
-### Contact form not saving
-- Verify `contact_requests` table exists
-- Check browser console for errors
-- Verify service role key is set
+# Connect directly to verify
+docker exec -it lellis-postgres psql -U postgres -d lellis_designs
+```
+
+### Webhook Not Receiving Events
+
+1. Check Stripe CLI is running (dev) or webhook URL is correct (prod)
+2. Verify `STRIPE_WEBHOOK_SECRET` matches
+3. Check Stripe Dashboard → Webhooks → Recent Events for errors
+
+### Emails Not Sending
+
+1. Verify `RESEND_API_KEY` is set
+2. Check domain is verified in Resend (production)
+3. For dev, use `onboarding@resend.dev` as FROM_EMAIL
+
+### Build Failures on Railway
+
+1. Check build logs in Railway dashboard
+2. Ensure all environment variables are set
+3. Run `pnpm build` locally to catch errors
 
 ---
 
-## Support
+## Maintenance
 
-For issues with:
-- **Supabase**: https://supabase.com/docs
-- **Stripe**: https://stripe.com/docs
-- **Next.js**: https://nextjs.org/docs
-- **Vercel**: https://vercel.com/docs
+### Regular Tasks
+
+- Monitor order notifications
+- Check error logs weekly
+- Update dependencies monthly (`pnpm update`)
+- Database backups (Railway handles this)
+
+### Updating the Site
+
+```bash
+# Make changes locally
+pnpm dev
+
+# Test thoroughly
+pnpm build
+
+# Push to deploy
+git add .
+git commit -m "Description of changes"
+git push
+```
+
+Railway auto-deploys on push to main.
