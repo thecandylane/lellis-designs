@@ -17,15 +17,16 @@ pnpm run lint     # Run ESLint (eslint-config-next with TypeScript)
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 with App Router
-- **Language**: TypeScript (strict mode)
+- **Framework**: Next.js 16.1.2 with App Router
+- **UI Library**: React 19.2.3
+- **Language**: TypeScript 5 (strict mode)
 - **Styling**: Tailwind CSS 4 with shadcn-style CSS variables
 - **CMS**: Payload CMS 3 (embedded in Next.js)
 - **Database**: PostgreSQL (via Payload's postgres adapter)
-- **Payments**: Stripe (API version 2025-12-15.clover)
-- **State Management**: Zustand with persist middleware
+- **Payments**: Stripe 20.1.2 (API version 2025-12-15.clover)
+- **State Management**: Zustand 5 with persist middleware
 - **Icons**: Lucide React
-- **Email**: Resend
+- **Email**: Resend 6.8.0
 
 ## Architecture
 
@@ -220,10 +221,11 @@ Uses CSS variables for consistent theming (defined in `app/globals.css`):
 5. Run `pnpm dev` to start development server
 6. Access `/admin` to create first admin user and set up content
 
-## Railway Deployment
+## Vercel Deployment
 
-This project is designed for Railway deployment:
-- Add PostgreSQL service
-- Configure environment variables
-- Deploy from GitHub
+This project is deployed on Vercel with Neon PostgreSQL:
+- **Hosting**: Vercel (auto-deploys from GitHub main branch)
+- **Database**: Neon PostgreSQL (serverless)
+- **Domain**: https://lellis-designs.vercel.app
+- Configure environment variables in Vercel dashboard
 - Payload will auto-run migrations on first start

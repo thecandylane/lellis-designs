@@ -75,3 +75,4 @@ logs/
 # Local database files
 *.sqlite
 *.db
+.env*.local

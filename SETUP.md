@@ -94,40 +94,47 @@ Copy the `whsec_...` secret to `STRIPE_WEBHOOK_SECRET` in `.env.local`.
 
 ---
 
-## Part 2: Production Deployment (Railway)
+## Part 2: Production Deployment (Vercel + Neon)
 
 ### Prerequisites
 
-- Railway account (railway.app)
+- Vercel account (vercel.com)
+- Neon account (neon.tech) for PostgreSQL
 - GitHub repository connected
 - Domain name ready
 - Client's Stripe account (live mode)
 - Client's Resend account with verified domain
 
-### 1. Railway Setup
+### 1. Neon Database Setup
 
-1. Create new project in Railway
-2. Add **PostgreSQL** service
-3. Add **GitHub Repo** service (your repo)
+1. Create new project in Neon
+2. Create a database (e.g., `lellis_designs`)
+3. Copy the connection string from the dashboard
 
-### 2. Environment Variables
+### 2. Vercel Setup
 
-In Railway → Variables, add:
+1. Import project from GitHub in Vercel dashboard
+2. Connect to your GitHub repository
+3. Vercel will auto-detect Next.js
+
+### 3. Environment Variables
+
+In Vercel → Settings → Environment Variables, add:
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `DATABASE_URL` | Auto-set by Railway | PostgreSQL connection |
+| `DATABASE_URL` | Neon connection string | From Neon dashboard |
 | `PAYLOAD_SECRET` | Generate new 32+ char string | **Different from dev** |
 | `STRIPE_SECRET_KEY` | `sk_live_...` | Client's live key |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | From Stripe dashboard |
 | `RESEND_API_KEY` | `re_...` | Client's Resend key |
 | `ADMIN_EMAIL` | Client's email | Order notifications |
 | `FROM_EMAIL` | `Business <orders@domain.com>` | Verified in Resend |
-| `PICKUP_ADDRESS` | Full address | For pickup orders |
+| `NEXT_PUBLIC_PICKUP_ADDRESS` | Full address | For pickup orders |
 | `NEXT_PUBLIC_SITE_URL` | `https://domain.com` | Production URL |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` | Client's live key |
 
-### 3. Stripe Webhook (Production)
+### 4. Stripe Webhook (Production)
 
 1. Go to Stripe Dashboard → Developers → Webhooks
 2. Click **Add endpoint**
@@ -135,17 +142,17 @@ In Railway → Variables, add:
 4. Events: Select `checkout.session.completed`
 5. Copy **Signing secret** to `STRIPE_WEBHOOK_SECRET`
 
-### 4. Domain Setup
+### 5. Domain Setup
 
-1. Railway → Settings → Domains
+1. Vercel → Settings → Domains
 2. Add custom domain
 3. Configure DNS:
-   - CNAME record pointing to Railway URL
-   - Or use Railway's nameservers
+   - CNAME record pointing to `cname.vercel-dns.com`
+   - Or use Vercel's nameservers
 
-### 5. First Deployment
+### 6. First Deployment
 
-Railway auto-deploys on push to main branch. First deploy will:
+Vercel auto-deploys on push to main branch. First deploy will:
 - Run database migrations automatically
 - Build the Next.js app
 - Start the server
@@ -199,12 +206,12 @@ Visit `/admin` to create the production admin user.
 
 3. **Domain Registration**
    - Client purchases domain (Namecheap, Google Domains, etc.)
-   - You configure DNS to point to Railway
+   - You configure DNS to point to Vercel
 
 ### What You Manage
 
-- Railway hosting (bill client monthly)
-- Database backups
+- Vercel hosting
+- Neon database (automatic backups included)
 - Code updates and maintenance
 
 ### Client Training
@@ -264,8 +271,9 @@ docker run -d --name newclient-postgres \
 
 ### 5. Deploy
 
-- Create new Railway project
-- Connect new GitHub repo
+- Create new Vercel project
+- Create new Neon database
+- Connect GitHub repo
 - Configure environment variables
 - Add custom domain
 
@@ -298,9 +306,9 @@ docker exec -it lellis-postgres psql -U postgres -d lellis_designs
 2. Check domain is verified in Resend (production)
 3. For dev, use `onboarding@resend.dev` as FROM_EMAIL
 
-### Build Failures on Railway
+### Build Failures on Vercel
 
-1. Check build logs in Railway dashboard
+1. Check build logs in Vercel dashboard
 2. Ensure all environment variables are set
 3. Run `pnpm build` locally to catch errors
 
@@ -313,7 +321,7 @@ docker exec -it lellis-postgres psql -U postgres -d lellis_designs
 - Monitor order notifications
 - Check error logs weekly
 - Update dependencies monthly (`pnpm update`)
-- Database backups (Railway handles this)
+- Database backups (Neon handles this automatically)
 
 ### Updating the Site
 
@@ -330,4 +338,4 @@ git commit -m "Description of changes"
 git push
 ```
 
-Railway auto-deploys on push to main.
+Vercel auto-deploys on push to main.

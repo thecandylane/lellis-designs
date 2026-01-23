@@ -16,14 +16,15 @@ Custom 3" button e-commerce platform built for a Louisiana-based small business.
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
+| Framework | Next.js 16.1.2 (App Router) |
+| UI Library | React 19.2.3 |
+| Language | TypeScript 5 |
 | CMS | Payload CMS 3 (embedded) |
 | Database | PostgreSQL |
 | Styling | Tailwind CSS 4 |
-| Payments | Stripe Checkout |
-| Email | Resend |
-| State | Zustand |
+| Payments | Stripe 20.1.2 |
+| Email | Resend 6.8.0 |
+| State | Zustand 5 |
 
 ## Quick Start
 

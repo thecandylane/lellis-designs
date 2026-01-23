@@ -79,10 +79,11 @@ export default async function HomePage() {
 
               {/* Pricing badges */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-8">
-                <span className="inline-flex items-center bg-primary text-primary-foreground px-4 py-2 rounded-full text-lg font-bold shadow-lg">
+                <span className="inline-flex items-center border-2 border-primary/30 bg-primary/5 text-primary px-3 py-1.5 rounded-lg text-base font-semibold">
                   $5 each
                 </span>
-                <span className="inline-flex items-center bg-secondary text-secondary-foreground px-4 py-2 rounded-full text-lg font-bold shadow-lg">
+                <span className="text-muted-foreground text-base font-medium">•</span>
+                <span className="inline-flex items-center border-2 border-secondary/30 bg-secondary/5 text-secondary px-3 py-1.5 rounded-lg text-base font-semibold">
                   Bulk discounts available
                 </span>
               </div>

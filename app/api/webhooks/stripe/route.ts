@@ -35,10 +35,7 @@ export async function POST(request: NextRequest) {
     try {
       await handleCheckoutCompleted(session)
     } catch (err) {
-      console.error('=== CHECKOUT ERROR ===')
-      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err)
-      console.error('Error message:', err instanceof Error ? err.message : String(err))
-      console.error('Full error:', err)
+      console.error('Order processing failed:', err instanceof Error ? err.message : String(err))
       return NextResponse.json({ error: 'Failed to process order' }, { status: 500 })
     }
   }
@@ -47,15 +44,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log('=== HANDLING CHECKOUT ===')
-  console.log('Session ID:', session.id)
-
   const payload = await getPayload()
 
   // Retrieve the complete session to get all details
-  console.log('Retrieving full session from Stripe...')
   const fullSession = await stripe.checkout.sessions.retrieve(session.id)
-  console.log('Full session retrieved successfully')
 
   const metadata = fullSession.metadata || {}
   const email = metadata.email || fullSession.customer_email || ''
@@ -121,23 +113,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     ambassadorCode: ambassadorCode,
   }
 
-  console.log('=== INSERTING ORDER ===')
-  console.log('Order data:', JSON.stringify(orderData, null, 2))
-
   const order = await payload.create({
     collection: 'orders',
     data: orderData,
   })
 
-  console.log('=== ORDER CREATED ===')
-  console.log('Order ID:', order.id)
-
   // Send emails (don't let email failures break the order)
   try {
-    console.log('=== SENDING EMAILS ===')
-    console.log('Customer email:', email)
-    console.log('Admin email:', process.env.ADMIN_EMAIL)
-
     const emailData = {
       orderId: String(order.id),
       customerEmail: email,
@@ -158,19 +140,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
 
     // Send both emails in parallel
-    const [customerResult, adminResult] = await Promise.all([
+    await Promise.all([
       sendOrderConfirmation(emailData),
       sendAdminOrderNotification(emailData),
     ])
-
-    console.log('Customer email result:', customerResult)
-    console.log('Admin email result:', adminResult)
-    console.log('=== EMAILS SENT SUCCESSFULLY ===')
   } catch (emailError) {
     // Log but don't throw - order was created successfully
-    console.error('=== EMAIL ERROR ===')
-    console.error('Error type:', emailError instanceof Error ? emailError.constructor.name : typeof emailError)
-    console.error('Error message:', emailError instanceof Error ? emailError.message : String(emailError))
-    console.error('Full error:', emailError)
+    console.error('Email sending failed:', emailError instanceof Error ? emailError.message : String(emailError))
   }
 }
