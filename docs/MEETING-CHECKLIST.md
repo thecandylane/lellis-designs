@@ -127,8 +127,9 @@ Update these values with PRODUCTION keys:
 | `RESEND_API_KEY` | `re_...` |
 | `ADMIN_EMAIL` | client's email |
 | `FROM_EMAIL` | `L. Ellis Designs <orders@lellisdesigns.com>` |
-| `PICKUP_ADDRESS` | client's pickup address |
 | `NEXT_PUBLIC_SITE_URL` | `https://lellisdesigns.com` |
+
+**Note:** Pickup address is set in Admin → Site Settings (not an env variable).
 
 - [ ] All environment variables updated
 - [ ] Triggered redeploy in Vercel

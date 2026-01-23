@@ -63,8 +63,9 @@ RESEND_API_KEY=re_...
 # Optional
 ADMIN_EMAIL=orders@yourdomain.com
 FROM_EMAIL=Your Business <orders@yourdomain.com>
-PICKUP_ADDRESS=123 Main St, City, ST 12345
 NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+
+# Note: Pickup address is configured in Admin → Site Settings
 ```
 
 ## Project Structure
