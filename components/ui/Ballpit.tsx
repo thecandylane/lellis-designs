@@ -552,10 +552,10 @@ function createPointerData(options: Partial<PointerData> & { domElement: HTMLEle
       document.body.addEventListener('pointermove', onPointerMove)
       document.body.addEventListener('pointerleave', onPointerLeave)
       document.body.addEventListener('click', onPointerClick)
-      document.body.addEventListener('touchstart', onTouchStart, { passive: false })
-      document.body.addEventListener('touchmove', onTouchMove, { passive: false })
-      document.body.addEventListener('touchend', onTouchEnd, { passive: false })
-      document.body.addEventListener('touchcancel', onTouchEnd, { passive: false })
+      document.body.addEventListener('touchstart', onTouchStart, { passive: true })
+      document.body.addEventListener('touchmove', onTouchMove, { passive: true })
+      document.body.addEventListener('touchend', onTouchEnd, { passive: true })
+      document.body.addEventListener('touchcancel', onTouchEnd, { passive: true })
       globalPointerActive = true
     }
   }
@@ -599,7 +599,7 @@ function processPointerInteraction() {
 
 function onTouchStart(e: TouchEvent) {
   if (e.touches.length > 0) {
-    e.preventDefault()
+    // Don't preventDefault - allow native scrolling
     pointerPosition.set(e.touches[0].clientX, e.touches[0].clientY)
     for (const [elem, data] of pointerMap) {
       const rect = elem.getBoundingClientRect()
@@ -618,7 +618,7 @@ function onTouchStart(e: TouchEvent) {
 
 function onTouchMove(e: TouchEvent) {
   if (e.touches.length > 0) {
-    e.preventDefault()
+    // Don't preventDefault - allow native scrolling
     pointerPosition.set(e.touches[0].clientX, e.touches[0].clientY)
     for (const [elem, data] of pointerMap) {
       const rect = elem.getBoundingClientRect()
@@ -779,7 +779,8 @@ function createBallpit(canvas: HTMLCanvasElement, config: Partial<BallpitConfig>
   const intersectionPoint = new Vector3()
   let isPaused = false
 
-  canvas.style.touchAction = 'none'
+  // Allow touch scrolling on mobile - only disable horizontal pan for the ballpit interaction
+  canvas.style.touchAction = 'pan-y'
   canvas.style.userSelect = 'none'
   ;(canvas.style as unknown as { webkitUserSelect: string }).webkitUserSelect = 'none'
 
