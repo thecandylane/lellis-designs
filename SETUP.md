@@ -348,3 +348,94 @@ git push
 ```
 
 Vercel auto-deploys on push to main.
+
+---
+
+## Part 6: Git Workflow
+
+### Branch Strategy
+
+```
+main (production)
+  └── develop (integration/staging)
+        ├── feature/new-feature
+        ├── fix/bug-description
+        └── chore/maintenance-task
+```
+
+### Branch Purposes
+
+| Branch | Purpose | Deploys To |
+|--------|---------|------------|
+| `main` | Production-ready code | lellisdesigns.com |
+| `develop` | Integration/testing | Preview URL |
+| `feature/*` | New features | PR preview |
+| `fix/*` | Bug fixes | PR preview |
+
+### Development Workflow
+
+**1. Starting new work:**
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/add-wishlist
+```
+
+**2. During development:**
+```bash
+# Make changes, commit often
+git add <files>
+git commit -m "Add wishlist button to product page"
+```
+
+**3. When ready for review:**
+```bash
+git push -u origin feature/add-wishlist
+# Create PR to develop on GitHub
+```
+
+**4. After PR approval:**
+- Merge PR into `develop`
+- Test on preview deployment
+- Delete feature branch
+
+### Production Releases
+
+When `develop` is tested and ready:
+
+```bash
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+```
+
+Or create a PR from `develop` → `main` for formal review.
+
+### Rules
+
+1. **Never push directly to `main`** - Always go through `develop`
+2. **Keep `develop` deployable** - Don't merge broken code
+3. **Small, focused PRs** - Easier to review and revert
+4. **Delete merged branches** - Keep repo clean
+
+### GitHub Branch Protection (Recommended)
+
+**For `main` branch:**
+- Require pull request before merging
+- Require status checks to pass (Vercel build)
+- No direct pushes
+
+**For `develop` branch:**
+- Require pull request before merging
+- Allow squash merging
+
+### Vercel Configuration
+
+Vercel automatically creates preview deployments for:
+- Every PR gets a unique preview URL
+- `develop` branch can have a stable preview URL
+
+Configure in Vercel → Settings → Git:
+- Production Branch: `main`
+- Preview Branches: All other branches
