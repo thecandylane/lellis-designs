@@ -6,6 +6,8 @@ import Header from "@/components/ui/Header";
 import AmbassadorTracker from "@/components/AmbassadorTracker";
 import { getThemeSettings } from "@/lib/theme";
 
+export const dynamic = 'force-dynamic';
+
 const questrial = Questrial({
   variable: "--font-sans",
   subsets: ["latin"],

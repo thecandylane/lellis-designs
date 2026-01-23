@@ -1,6 +1,8 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { formatDistanceToNow, format } from 'date-fns'
+
+export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import RequestActions from './RequestActions'
 import {
