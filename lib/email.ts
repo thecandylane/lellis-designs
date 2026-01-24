@@ -4,7 +4,6 @@ async function getResend() {
   if (!apiKey) {
     throw new Error('RESEND_API_KEY environment variable is not set')
   }
-  // @ts-expect-error - dynamic import to avoid build-time bundling
   const { Resend } = await (Function('return import("resend")')())
   return new Resend(apiKey)
 }
