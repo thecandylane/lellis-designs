@@ -107,8 +107,8 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-500">View and fulfill customer orders</p>
+        <h1 className="text-2xl font-bold text-foreground">Orders</h1>
+        <p className="text-muted-foreground">View and fulfill customer orders</p>
       </div>
 
       {/* Filter Tabs */}
@@ -119,8 +119,8 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
             href={tab.key === 'all' ? '/admin/orders?status=all' : `/admin/orders?status=${tab.key}`}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap min-h-[44px] ${
               filter === tab.key
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-card text-muted-foreground hover:bg-muted border border-border'
             }`}
           >
             {tab.label}
@@ -137,14 +137,14 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
 
       {/* Orders List */}
       {orders.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No orders found</h3>
-          <p className="text-gray-500">
+          <h3 className="text-lg font-medium text-foreground mb-1">No orders found</h3>
+          <p className="text-muted-foreground">
             {filter === 'active' ? 'No active orders right now!' : 'Orders will appear here when customers place them.'}
           </p>
         </div>
@@ -182,13 +182,13 @@ function OrderCard({ order }: { order: Order }) {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="px-4 sm:px-5 py-4 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-foreground">
                 {order.customer_name || order.customer_email.split('@')[0]}
               </p>
               {order.order_type === 'custom' && (
@@ -198,13 +198,13 @@ function OrderCard({ order }: { order: Order }) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500 break-all">{order.customer_email}</p>
+            <p className="text-sm text-muted-foreground break-all">{order.customer_email}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           {neededBy && (
-            <div className={`${isUrgent ? 'text-red-600' : 'text-gray-600'}`}>
-              <p className="text-xs text-gray-400">Need by</p>
+            <div className={`${isUrgent ? 'text-red-600' : 'text-muted-foreground'}`}>
+              <p className="text-xs text-muted-foreground/70">Need by</p>
               <p className={`text-sm font-medium ${isUrgent ? 'text-red-600' : ''}`}>
                 {neededBy} {isUrgent && '⚠️'}
               </p>
@@ -219,24 +219,24 @@ function OrderCard({ order }: { order: Order }) {
       {/* Items - The Main Content */}
       <div className="p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-foreground/80">
             {totalQty} button{totalQty !== 1 ? 's' : ''} to make
           </span>
-          <span className="text-gray-300">•</span>
-          <span className="text-sm text-gray-500">
+          <span className="text-border">•</span>
+          <span className="text-sm text-muted-foreground">
             {order.shipping_method === 'pickup' ? '📍 Pickup' : '📦 Ship'}
           </span>
-          <span className="text-gray-300">•</span>
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-border">•</span>
+          <span className="text-sm font-medium text-foreground">
             ${order.total.toFixed(2)}
           </span>
         </div>
 
         <div className="grid gap-3">
           {order.items.map((item, idx) => (
-            <div key={idx} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
+            <div key={idx} className="flex items-start gap-4 p-3 bg-muted rounded-lg">
               {/* Button Image */}
-              <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-white border border-gray-200">
+              <div className="relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-card border border-border">
                 {item.imageUrl ? (
                   <Image
                     src={item.imageUrl}
@@ -245,7 +245,7 @@ function OrderCard({ order }: { order: Order }) {
                     className="object-contain"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -256,8 +256,8 @@ function OrderCard({ order }: { order: Order }) {
               {/* Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
-                  <h4 className="font-medium text-gray-900">{item.name}</h4>
-                  <span className="ml-2 px-2 py-1 bg-white rounded text-sm font-bold text-gray-700 border border-gray-200">
+                  <h4 className="font-medium text-foreground">{item.name}</h4>
+                  <span className="ml-2 px-2 py-1 bg-card rounded text-sm font-bold text-foreground/80 border border-border">
                     ×{item.quantity}
                   </span>
                 </div>
@@ -267,20 +267,20 @@ function OrderCard({ order }: { order: Order }) {
                   <div className="mt-2 space-y-1">
                     {item.personName && (
                       <p className="text-sm">
-                        <span className="text-gray-500">Name:</span>{' '}
-                        <span className="font-medium text-gray-900">{item.personName}</span>
+                        <span className="text-muted-foreground">Name:</span>{' '}
+                        <span className="font-medium text-foreground">{item.personName}</span>
                       </p>
                     )}
                     {item.personNumber && (
                       <p className="text-sm">
-                        <span className="text-gray-500">Number/Class:</span>{' '}
-                        <span className="font-medium text-gray-900">{item.personNumber}</span>
+                        <span className="text-muted-foreground">Number/Class:</span>{' '}
+                        <span className="font-medium text-foreground">{item.personNumber}</span>
                       </p>
                     )}
                     {item.notes && (
                       <p className="text-sm">
-                        <span className="text-gray-500">Notes:</span>{' '}
-                        <span className="text-gray-700">{item.notes}</span>
+                        <span className="text-muted-foreground">Notes:</span>{' '}
+                        <span className="text-foreground/80">{item.notes}</span>
                       </p>
                     )}
                   </div>
@@ -292,7 +292,7 @@ function OrderCard({ order }: { order: Order }) {
 
         {/* Custom Request Link */}
         {order.order_type === 'custom' && order.custom_request_id && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="mt-3 pt-3 border-t border-border">
             <Link
               href="/admin/requests"
               className="inline-flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800"
@@ -306,7 +306,7 @@ function OrderCard({ order }: { order: Order }) {
 
       {/* Actions Footer */}
       {order.status !== 'completed' && order.status !== 'pending' && (
-        <div className="px-4 sm:px-5 py-4 bg-gray-50 border-t border-gray-100">
+        <div className="px-4 sm:px-5 py-4 bg-muted/50 border-t border-border/50">
           <OrderActions
             orderId={order.id}
             currentStatus={order.status}

@@ -14,15 +14,15 @@ export default function AdminHeader({ email }: { email: string }) {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between md:justify-end">
+    <header className="bg-card/80 backdrop-blur-sm border-b border-border px-4 sm:px-6 py-3 flex items-center justify-between md:justify-end">
       {/* Mobile menu trigger - only visible on mobile */}
       <MobileSidebarTrigger />
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <span className="hidden sm:block text-sm text-gray-600">{email}</span>
+        <span className="hidden sm:block text-sm text-muted-foreground">{email}</span>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors min-h-[44px] px-2"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] px-2"
         >
           <LogOut className="w-4 h-4" />
           <span className="hidden sm:inline">Sign Out</span>

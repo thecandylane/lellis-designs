@@ -122,20 +122,20 @@ export default async function RequestsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Custom Requests</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Custom Requests</h1>
+          <p className="text-muted-foreground mt-1">
             {activeRequests.length} active request{activeRequests.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
       {activeRequests.length === 0 && completedRequests.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-8 h-8 text-gray-400" />
+        <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No custom requests yet</h3>
-          <p className="text-gray-500">
+          <h3 className="text-lg font-medium text-foreground mb-1">No custom requests yet</h3>
+          <p className="text-muted-foreground">
             When customers submit custom button requests, they&apos;ll appear here.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default async function RequestsPage() {
           {/* Active Requests */}
           {activeRequests.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Active Requests</h2>
+              <h2 className="text-lg font-semibold text-foreground">Active Requests</h2>
               {activeRequests.map((request) => (
                 <RequestCard key={request.id} request={request} />
               ))}
@@ -154,7 +154,7 @@ export default async function RequestsPage() {
           {/* Completed/Declined Requests */}
           {completedRequests.length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-500">Past Requests</h2>
+              <h2 className="text-lg font-semibold text-muted-foreground">Past Requests</h2>
               {completedRequests.map((request) => (
                 <RequestCard key={request.id} request={request} collapsed />
               ))}
@@ -175,18 +175,18 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
 
   if (collapsed) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-4 opacity-75">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-4 opacity-75">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
               {status.label}
             </span>
-            <span className="font-medium text-gray-900">{request.customerName}</span>
-            <span className="text-gray-500 text-sm">
+            <span className="font-medium text-foreground">{request.customerName}</span>
+            <span className="text-muted-foreground text-sm">
               {request.orderDetails.quantity} buttons
             </span>
           </div>
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-muted-foreground/70">
             {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
           </span>
         </div>
@@ -195,9 +195,9 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-4 border-b border-border/50 bg-muted/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
             {status.label}
@@ -208,11 +208,11 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
               Rush
             </span>
           )}
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             Submitted {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
           </span>
         </div>
-        <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : 'text-gray-600'}`}>
+        <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : 'text-muted-foreground'}`}>
           <Calendar className="w-4 h-4 flex-shrink-0" />
           <span>
             {isOverdue ? 'OVERDUE - ' : ''}
@@ -228,24 +228,24 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
         <div className="space-y-6">
           {/* Contact Info */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Contact
             </h3>
             <div className="space-y-2">
-              <p className="font-medium text-gray-900 text-lg">{request.customerName}</p>
-              <div className="flex items-center gap-2 text-gray-600">
+              <p className="font-medium text-foreground text-lg">{request.customerName}</p>
+              <div className="flex items-center gap-2 text-foreground/80">
                 <Mail className="w-4 h-4" />
                 <a href={`mailto:${request.customerEmail}`} className="hover:text-primary">
                   {request.customerEmail}
                 </a>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-foreground/80">
                 <Phone className="w-4 h-4" />
                 <a href={`tel:${request.customerPhone}`} className="hover:text-primary">
                   {request.customerPhone}
                 </a>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <ContactIcon className="w-4 h-4" />
                 <span>Prefers {request.preferredContact}</span>
               </div>
@@ -254,18 +254,18 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
 
           {/* Design Details */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Design Vision
             </h3>
-            <p className="text-gray-800 whitespace-pre-wrap">{request.designDetails.description}</p>
+            <p className="text-foreground/90 whitespace-pre-wrap">{request.designDetails.description}</p>
             {request.designDetails.eventType && (
-              <div className="flex items-center gap-2 text-gray-600 mt-3">
+              <div className="flex items-center gap-2 text-foreground/80 mt-3">
                 <Calendar className="w-4 h-4" />
                 <span>For: {request.designDetails.eventType}</span>
               </div>
             )}
             {request.designDetails.colorPreferences && (
-              <div className="flex items-center gap-2 text-gray-600 mt-2">
+              <div className="flex items-center gap-2 text-foreground/80 mt-2">
                 <Palette className="w-4 h-4" />
                 <span>Colors: {request.designDetails.colorPreferences}</span>
               </div>
@@ -275,11 +275,11 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
           {/* Text Options */}
           {request.textOptions.wantsText !== 'no' && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Text on Button
               </h3>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-foreground/80">
                   <Type className="w-4 h-4" />
                   <span>
                     {request.textOptions.wantsText === 'yes'
@@ -288,12 +288,12 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
                   </span>
                 </div>
                 {request.textOptions.textContent && (
-                  <p className="bg-gray-100 rounded-lg p-3 text-gray-800 italic">
+                  <p className="bg-muted rounded-lg p-3 text-foreground/90 italic">
                     &ldquo;{request.textOptions.textContent}&rdquo;
                   </p>
                 )}
                 {request.textOptions.fontPreference && request.textOptions.fontPreference !== 'none' && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Font style: {FONT_LABELS[request.textOptions.fontPreference]}
                   </p>
                 )}
@@ -307,14 +307,14 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
           {/* Reference Images */}
           {request.referenceImages && request.referenceImages.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 <ImageIcon className="w-4 h-4 inline mr-1" />
                 Reference Images ({request.referenceImages.length})
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {request.referenceImages.map((ref, index) => (
                   <div key={index} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted border border-border">
                       <Image
                         src={ref.image.url}
                         alt={ref.description || `Reference ${index + 1}`}
@@ -336,30 +336,30 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
 
           {/* Order Details */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Order Details
             </h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-foreground/80">
                   <Package className="w-4 h-4" />
                   <span>Quantity</span>
                 </div>
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-foreground">
                   {request.orderDetails.quantity} buttons
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-foreground/80">
                   <Clock className="w-4 h-4" />
                   <span>Date flexibility</span>
                 </div>
-                <span className="text-gray-900">
+                <span className="text-foreground">
                   {FLEXIBILITY_LABELS[request.orderDetails.isFlexibleDate]}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-foreground/80">
                   {request.orderDetails.deliveryPreference === 'pickup' ? (
                     <MapPin className="w-4 h-4" />
                   ) : (
@@ -367,7 +367,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
                   )}
                   <span>Delivery</span>
                 </div>
-                <span className="text-gray-900">
+                <span className="text-foreground">
                   {DELIVERY_LABELS[request.orderDetails.deliveryPreference]}
                 </span>
               </div>
@@ -377,20 +377,20 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
           {/* Additional Info */}
           {request.additionalInfo && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Additional Notes
               </h3>
-              <p className="text-gray-600 bg-gray-50 rounded-lg p-3">{request.additionalInfo}</p>
+              <p className="text-foreground/80 bg-muted/50 rounded-lg p-3">{request.additionalInfo}</p>
             </div>
           )}
 
           {/* Admin Notes */}
           {request.adminSection?.notes && (
             <div>
-              <h3 className="text-sm font-semibold text-amber-600 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3">
                 Your Notes
               </h3>
-              <p className="text-gray-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-foreground/80 bg-accent/10 border border-accent/20 rounded-lg p-3">
                 {request.adminSection.notes}
               </p>
             </div>
@@ -399,7 +399,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
       </div>
 
       {/* Actions */}
-      <div className="p-4 border-t bg-gray-50">
+      <div className="p-4 border-t border-border/50 bg-muted/50">
         <RequestActions
           requestId={request.id}
           currentStatus={request.status}
