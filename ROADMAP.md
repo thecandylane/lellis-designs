@@ -125,8 +125,9 @@ Set these in Vercel Dashboard → Settings → Environment Variables:
 | `RESEND_API_KEY` | Client's `re_...` |
 | `ADMIN_EMAIL` | Client's email |
 | `FROM_EMAIL` | `L. Ellis Designs <orders@domain.com>` |
-| `PICKUP_ADDRESS` | Actual pickup address |
 | `NEXT_PUBLIC_SITE_URL` | `https://domain.com` |
+
+**Note:** Pickup address is configured in Admin → Site Settings.
 
 ### Stripe Webhook Setup
 

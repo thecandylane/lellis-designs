@@ -57,8 +57,9 @@ ADMIN_EMAIL=your@email.com
 FROM_EMAIL=Your Business <onboarding@resend.dev>
 
 # Optional
-PICKUP_ADDRESS=123 Main St, City, ST 12345
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Note: Pickup address is configured in Admin → Site Settings
 ```
 
 ### 3. Install & Run
@@ -139,9 +140,10 @@ In Vercel → Settings → Environment Variables, add:
 | `RESEND_API_KEY` | `re_...` | Client's Resend key |
 | `ADMIN_EMAIL` | Client's email | Order notifications |
 | `FROM_EMAIL` | `Business <orders@domain.com>` | Verified in Resend |
-| `NEXT_PUBLIC_PICKUP_ADDRESS` | Full address | For pickup orders |
 | `NEXT_PUBLIC_SITE_URL` | `https://domain.com` | Production URL |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` | Client's live key |
+
+**Note:** Pickup address is configured in Admin → Site Settings, not as an environment variable.
 
 ### 5. Stripe Webhook (Production)
 

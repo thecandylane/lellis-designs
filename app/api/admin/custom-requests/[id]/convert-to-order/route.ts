@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+import { getStripe } from '@/lib/stripe'
 
 type Params = Promise<{ id: string }>
 
@@ -143,6 +141,7 @@ export async function POST(
   let paymentUrl: string | undefined
   if (paymentMethod === 'stripe' && quotedPrice) {
     try {
+      const stripe = getStripe()
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         line_items: [

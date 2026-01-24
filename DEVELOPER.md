@@ -73,8 +73,9 @@ FROM_EMAIL                  # Sender address (default: L. Ellis Designs <orders@
 BLOB_READ_WRITE_TOKEN       # Get from Vercel Dashboard > Storage > Create Blob Store
 
 # Optional
-PICKUP_ADDRESS              # Default pickup address for "ready" emails
 NEXT_PUBLIC_SITE_URL        # Production URL for email links
+
+# Note: Pickup address is configured in Admin → Site Settings
 ```
 
 ### Data Model (Payload Collections)
