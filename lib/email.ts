@@ -1,11 +1,17 @@
+import { Resend } from 'resend'
+
 // Lazy-load Resend client to avoid build-time evaluation
-async function getResend() {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY environment variable is not set')
+let resendInstance: Resend | null = null
+
+function getResend() {
+  if (!resendInstance) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set')
+    }
+    resendInstance = new Resend(apiKey)
   }
-  const { Resend } = await (Function('return import("resend")')())
-  return new Resend(apiKey)
+  return resendInstance
 }
 
 // Admin email - where order notifications are sent
@@ -140,7 +146,7 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
     </div>
   `
 
-  const resend = await getResend()
+  const resend = getResend()
   return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
@@ -198,7 +204,7 @@ export async function sendAdminOrderNotification(data: OrderEmailData) {
     </div>
   `
 
-  const resend = await getResend()
+  const resend = getResend()
   return resend.emails.send({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
@@ -248,7 +254,7 @@ export async function sendReadyForPickup(data: {
     </div>
   `
 
-  const resend = await getResend()
+  const resend = getResend()
   return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
@@ -300,7 +306,7 @@ export async function sendShippedNotification(data: {
     </div>
   `
 
-  const resend = await getResend()
+  const resend = getResend()
   return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
@@ -357,7 +363,7 @@ export async function sendAdminCustomRequestNotification(data: {
     </div>
   `
 
-  const resend = await getResend()
+  const resend = getResend()
   return resend.emails.send({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
