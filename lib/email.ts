@@ -1,17 +1,12 @@
-// Lazy-load Resend client to avoid build errors when API key isn't set
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let resendClient: any = null
-
+// Lazy-load Resend client to avoid build-time evaluation
 async function getResend() {
-  if (!resendClient) {
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY environment variable is not set')
-    }
-    const { Resend } = await import('resend')
-    resendClient = new Resend(apiKey)
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable is not set')
   }
-  return resendClient
+  // @ts-expect-error - dynamic import to avoid build-time bundling
+  const { Resend } = await (Function('return import("resend")')())
+  return new Resend(apiKey)
 }
 
 // Admin email - where order notifications are sent
