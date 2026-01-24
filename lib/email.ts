@@ -315,6 +315,60 @@ export async function sendShippedNotification(data: {
   })
 }
 
+// Email to admin when someone uses the contact form
+export async function sendAdminContactNotification(data: {
+  name: string
+  email: string
+  subject: string
+  message: string
+}) {
+  const { name, email, subject, message } = data
+
+  const subjectLabels: Record<string, string> = {
+    order: '📦 Order Question',
+    custom: '🎨 Custom Inquiry',
+    pricing: '💰 Pricing/Bulk',
+    general: '💬 General',
+    other: '📝 Other',
+  }
+
+  const subjectLabel = subjectLabels[subject] || '📬 Contact'
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px;">
+      <h1 style="color: #0D9488;">${subjectLabel}</h1>
+
+      <div style="background: #f0fdfa; border: 1px solid #0D9488; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+        <p style="margin: 0;"><strong>From:</strong> ${name}</p>
+        <p style="margin: 8px 0 0 0;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+      </div>
+
+      <h2 style="margin-top: 0;">Message</h2>
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">${message}</div>
+
+      <p style="margin-top: 24px;">
+        <a href="mailto:${email}?subject=Re: Your message to L. Ellis Designs"
+           style="background: #0D9488; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+          Reply to ${name}
+        </a>
+      </p>
+
+      <p style="color: #666; font-size: 14px; margin-top: 24px;">
+        This message was sent from the L. Ellis Designs contact form.
+      </p>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: ADMIN_EMAIL,
+    replyTo: email,
+    subject: `${subjectLabel} from ${name}`,
+    html,
+  })
+}
+
 // Email to admin when new custom request comes in
 export async function sendAdminCustomRequestNotification(data: {
   requestId: string

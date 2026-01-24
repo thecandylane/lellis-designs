@@ -184,6 +184,7 @@ export default async function HomePage() {
             <div className="flex gap-6 text-sm text-primary-foreground/80">
               <Link href="/" className="hover:text-secondary transition-colors">Shop</Link>
               <Link href="/custom-request" className="hover:text-secondary transition-colors">Custom Order</Link>
+              <Link href="/contact" className="hover:text-secondary transition-colors">Contact</Link>
               <Link href="/cart" className="hover:text-secondary transition-colors">Cart</Link>
             </div>
             <p className="text-sm text-primary-foreground/60">
