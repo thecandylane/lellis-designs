@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Questrial, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
+import Header from "@/components/ui/Header";
 import AmbassadorTracker from "@/components/AmbassadorTracker";
 import { getThemeSettings } from "@/lib/theme";
 
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <AmbassadorTracker />
         </Suspense>
+        <Header />
         {children}
       </body>
     </html>
