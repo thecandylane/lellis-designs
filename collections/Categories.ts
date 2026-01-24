@@ -138,7 +138,10 @@ export const Categories: CollectionConfig = {
               ? originalDoc.parent?.id
               : originalDoc.parent
             const slugUnchanged = data.slug === originalDoc.slug
-            const parentUnchanged = data.parent === originalParentId
+            // Handle null/undefined equivalence for parent comparison
+            const dataParent = data.parent ?? null
+            const origParent = originalParentId ?? null
+            const parentUnchanged = dataParent === origParent
 
             if (slugUnchanged && parentUnchanged) {
               return data
