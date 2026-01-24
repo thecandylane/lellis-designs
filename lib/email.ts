@@ -1,9 +1,8 @@
-import type { Resend } from 'resend'
-
 // Lazy-load Resend client to avoid build errors when API key isn't set
-let resendClient: Resend | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let resendClient: any = null
 
-async function getResend(): Promise<Resend> {
+async function getResend() {
   if (!resendClient) {
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
