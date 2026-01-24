@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 import { withPayload } from '@payloadcms/next/withPayload'
 
-// Force Vercel build cache invalidation - 2024-01-23
+// Force Vercel build cache invalidation - 2024-01-24
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Ensure resend is bundled correctly for serverless
+  serverExternalPackages: ['resend'],
 }
 
 export default withPayload(nextConfig)
