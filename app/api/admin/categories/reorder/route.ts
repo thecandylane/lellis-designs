@@ -21,16 +21,14 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload({ config })
 
-    // Update all items in parallel
-    await Promise.all(
-      items.map((item) =>
-        payload.update({
-          collection: 'categories',
-          id: item.id,
-          data: { sortOrder: item.sortOrder },
-        })
-      )
-    )
+    // Update items sequentially to avoid exhausting connection pool
+    for (const item of items) {
+      await payload.update({
+        collection: 'categories',
+        id: item.id,
+        data: { sortOrder: item.sortOrder },
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
