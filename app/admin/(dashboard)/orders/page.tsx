@@ -112,12 +112,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
         {filterTabs.map((tab) => (
           <Link
             key={tab.key}
             href={tab.key === 'all' ? '/admin/orders?status=all' : `/admin/orders?status=${tab.key}`}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap min-h-[44px] ${
               filter === tab.key
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
@@ -184,10 +184,10 @@ function OrderCard({ order }: { order: Order }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <p className="font-semibold text-gray-900">
                 {order.customer_name || order.customer_email.split('@')[0]}
               </p>
@@ -198,27 +198,27 @@ function OrderCard({ order }: { order: Order }) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500">{order.customer_email}</p>
+            <p className="text-sm text-gray-500 break-all">{order.customer_email}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {neededBy && (
-            <div className={`text-right ${isUrgent ? 'text-red-600' : 'text-gray-600'}`}>
+            <div className={`${isUrgent ? 'text-red-600' : 'text-gray-600'}`}>
               <p className="text-xs text-gray-400">Need by</p>
               <p className={`text-sm font-medium ${isUrgent ? 'text-red-600' : ''}`}>
                 {neededBy} {isUrgent && '⚠️'}
               </p>
             </div>
           )}
-          <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${status.bg} ${status.text}`}>
+          <span className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${status.bg} ${status.text}`}>
             {status.label}
           </span>
         </div>
       </div>
 
       {/* Items - The Main Content */}
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-sm font-medium text-gray-700">
             {totalQty} button{totalQty !== 1 ? 's' : ''} to make
           </span>
@@ -306,7 +306,7 @@ function OrderCard({ order }: { order: Order }) {
 
       {/* Actions Footer */}
       {order.status !== 'completed' && order.status !== 'pending' && (
-        <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
+        <div className="px-4 sm:px-5 py-4 bg-gray-50 border-t border-gray-100">
           <OrderActions
             orderId={order.id}
             currentStatus={order.status}

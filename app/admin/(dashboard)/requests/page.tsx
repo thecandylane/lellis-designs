@@ -197,8 +197,8 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
   return (
     <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${status.color}`}>
             {status.label}
           </span>
@@ -213,7 +213,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
           </span>
         </div>
         <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-600' : daysUntilDue <= 7 ? 'text-amber-600' : 'text-gray-600'}`}>
-          <Calendar className="w-4 h-4" />
+          <Calendar className="w-4 h-4 flex-shrink-0" />
           <span>
             {isOverdue ? 'OVERDUE - ' : ''}
             Needed by {format(neededByDate, 'MMM d, yyyy')}
@@ -223,7 +223,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
       </div>
 
       {/* Content */}
-      <div className="p-6 grid md:grid-cols-2 gap-6">
+      <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - Contact & Design */}
         <div className="space-y-6">
           {/* Contact Info */}
@@ -311,7 +311,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
                 <ImageIcon className="w-4 h-4 inline mr-1" />
                 Reference Images ({request.referenceImages.length})
               </h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {request.referenceImages.map((ref, index) => (
                   <div key={index} className="relative group">
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border">
