@@ -75,7 +75,12 @@ export async function POST(request: NextRequest) {
             description: imageDescriptions[i] || '',
           })
         } catch (uploadError) {
-          console.error(`Failed to upload image ${i + 1}:`, uploadError)
+          // Check for filesystem error (missing Blob storage on Vercel)
+          if (uploadError instanceof Error && uploadError.message.includes('ENOENT')) {
+            console.error(`Image upload failed - BLOB_READ_WRITE_TOKEN may not be configured:`, uploadError.message)
+          } else {
+            console.error(`Failed to upload image ${i + 1}:`, uploadError)
+          }
           // Continue with other images instead of failing completely
         }
       }

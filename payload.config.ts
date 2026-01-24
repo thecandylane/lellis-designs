@@ -50,7 +50,7 @@ export default buildConfig({
   ],
   globals: [SiteSettings],
   plugins: [
-    // Cloud storage for media files (only enabled when BLOB token is present)
+    // Cloud storage for media files - required on Vercel (no local filesystem)
     ...(process.env.BLOB_READ_WRITE_TOKEN
       ? [
           vercelBlobStorage({
@@ -60,6 +60,12 @@ export default buildConfig({
             token: process.env.BLOB_READ_WRITE_TOKEN,
           }),
         ]
+      : process.env.VERCEL
+      ? (() => {
+          console.error('⚠️ BLOB_READ_WRITE_TOKEN is required on Vercel for media uploads!')
+          console.error('Add it in Vercel Dashboard → Settings → Environment Variables')
+          return []
+        })()
       : []),
   ],
   editor: lexicalEditor(),
