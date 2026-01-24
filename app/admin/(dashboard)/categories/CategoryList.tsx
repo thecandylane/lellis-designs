@@ -2,7 +2,24 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { ChevronRight, Trash2, Eye, EyeOff, Loader2, GripVertical } from 'lucide-react'
 
 type CategoryNode = {
   id: string
@@ -11,20 +28,127 @@ type CategoryNode = {
   description?: string | null
   active: boolean
   buttonCount: number
+  sortOrder: number
   children: CategoryNode[]
 }
 
 export default function CategoryList({ categories }: { categories: CategoryNode[] }) {
+  const router = useRouter()
+  const [items, setItems] = useState(categories)
+  const [saving, setSaving] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = items.findIndex((item) => item.id === active.id)
+      const newIndex = items.findIndex((item) => item.id === over.id)
+
+      const newItems = arrayMove(items, oldIndex, newIndex)
+      setItems(newItems)
+
+      // Calculate new sort orders
+      const updates = newItems.map((item, index) => ({
+        id: item.id,
+        sortOrder: index,
+      }))
+
+      setSaving(true)
+      try {
+        const response = await fetch('/api/admin/categories/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: updates }),
+        })
+        if (!response.ok) throw new Error('Failed to save order')
+        router.refresh()
+      } catch (err) {
+        console.error('Failed to save order:', err)
+        // Revert on failure
+        setItems(categories)
+      } finally {
+        setSaving(false)
+      }
+    }
+  }
+
   return (
-    <div className="divide-y divide-gray-100">
-      {categories.map((category) => (
-        <CategoryRow key={category.id} category={category} depth={0} />
-      ))}
+    <div className="divide-y divide-gray-100 relative">
+      {saving && (
+        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
+          <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+        </div>
+      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+          {items.map((category) => (
+            <SortableCategoryRow key={category.id} category={category} depth={0} />
+          ))}
+        </SortableContext>
+      </DndContext>
     </div>
   )
 }
 
-function CategoryRow({ category, depth }: { category: CategoryNode; depth: number }) {
+function SortableCategoryRow({ category, depth }: { category: CategoryNode; depth: number }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id, disabled: depth > 0 })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    position: isDragging ? 'relative' as const : undefined,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <CategoryRow
+        category={category}
+        depth={depth}
+        dragHandleProps={depth === 0 ? { ...attributes, ...listeners } : undefined}
+        isDragging={isDragging}
+      />
+    </div>
+  )
+}
+
+type DragHandleProps = {
+  [key: string]: unknown
+}
+
+function CategoryRow({
+  category,
+  depth,
+  dragHandleProps,
+  isDragging,
+}: {
+  category: CategoryNode
+  depth: number
+  dragHandleProps?: DragHandleProps
+  isDragging?: boolean
+}) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(true)
@@ -70,15 +194,28 @@ function CategoryRow({ category, depth }: { category: CategoryNode; depth: numbe
       <div
         className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 hover:bg-gray-50 ${
           !category.active ? 'opacity-60' : ''
-        }`}
+        } ${isDragging ? 'bg-teal-50 shadow-lg rounded-lg' : ''}`}
         style={{ paddingLeft: `${16 + depth * 20}px` }}
       >
-        {/* Top row: Expand + Name + Count */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        {/* Top row: Drag Handle + Expand + Name + Count */}
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          {/* Drag Handle - only for top-level */}
+          {depth === 0 && dragHandleProps ? (
+            <button
+              {...dragHandleProps}
+              className="p-2 -ml-2 rounded cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center touch-none"
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="w-[44px]" />
+          )}
+
           {/* Expand/Collapse */}
           <button
             onClick={() => setExpanded(!expanded)}
-            className={`p-2 -ml-2 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            className={`p-2 rounded transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
               hasChildren ? 'hover:bg-gray-200 text-gray-400' : 'invisible'
             }`}
           >
@@ -95,7 +232,7 @@ function CategoryRow({ category, depth }: { category: CategoryNode; depth: numbe
             )}
           </div>
 
-          {/* Button Count - hidden on mobile when showing actions */}
+          {/* Button Count */}
           <span className="text-sm text-gray-500 whitespace-nowrap">
             {category.buttonCount} button{category.buttonCount !== 1 ? 's' : ''}
           </span>
@@ -150,7 +287,7 @@ function CategoryRow({ category, depth }: { category: CategoryNode; depth: numbe
         )}
       </div>
 
-      {/* Children */}
+      {/* Children - not sortable at nested levels for now */}
       {expanded &&
         category.children.map((child) => (
           <CategoryRow key={child.id} category={child} depth={depth + 1} />
