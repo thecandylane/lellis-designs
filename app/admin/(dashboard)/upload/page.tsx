@@ -222,7 +222,7 @@ export default function BulkUploadPage() {
 
       {/* Drop Zone */}
       <div
-        className={`bg-white rounded-lg shadow p-8 mb-6 border-2 border-dashed transition-colors ${
+        className={`bg-white rounded-lg shadow p-4 sm:p-8 mb-6 border-2 border-dashed transition-colors ${
           dragActive
             ? 'border-teal-500 bg-teal-50'
             : 'border-gray-300 hover:border-gray-400'
@@ -234,17 +234,17 @@ export default function BulkUploadPage() {
       >
         <div className="text-center">
           <Upload
-            className={`w-12 h-12 mx-auto mb-4 ${
+            className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 ${
               dragActive ? 'text-teal-500' : 'text-gray-400'
             }`}
           />
-          <p className="text-lg font-medium text-gray-700 mb-2">
+          <p className="text-base sm:text-lg font-medium text-gray-700 mb-2">
             {dragActive ? 'Drop images here!' : 'Drag & drop button images here'}
           </p>
           <p className="text-sm text-gray-500 mb-4">PNG, JPG, or WEBP images</p>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+            className="bg-teal-600 text-white px-6 py-2.5 rounded-lg hover:bg-teal-700 transition-colors min-h-[44px]"
           >
             Browse Files
           </button>
@@ -261,28 +261,28 @@ export default function BulkUploadPage() {
 
       {/* Pending Buttons Preview */}
       {pendingButtons.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Ready to Upload ({pendingButtons.length} buttons)
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+              Ready to Upload ({pendingButtons.length})
             </h2>
             <button
               onClick={clearAll}
-              className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+              className="text-sm text-gray-500 hover:text-red-600 transition-colors min-h-[44px] px-2"
             >
               Clear All
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {pendingButtons.map((btn) => (
               <div
                 key={btn.id}
-                className="relative bg-gray-50 rounded-lg p-3 border border-gray-200"
+                className="relative bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-200"
               >
                 <button
                   onClick={() => removeButton(btn.id)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 z-10"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 z-10 min-h-[32px] min-w-[32px] flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>

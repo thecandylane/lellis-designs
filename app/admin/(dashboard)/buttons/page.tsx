@@ -55,14 +55,14 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Buttons</h1>
           <p className="text-gray-500">{totalDocs} button{totalDocs !== 1 ? 's' : ''} listed</p>
         </div>
         <Link
           href="/admin/upload"
-          className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors"
+          className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px]"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -73,26 +73,28 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
 
       {/* Category Filter */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-gray-700">Filter by category:</span>
-          <Link
-            href="/admin/buttons"
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              categoryFilter === 'all'
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            All
-          </Link>
-          {categoryTree.map((cat) => (
-            <CategoryFilterLink
-              key={cat.id}
-              category={cat}
-              currentFilter={categoryFilter}
-              depth={0}
-            />
-          ))}
+        <div className="flex items-start sm:items-center gap-3">
+          <span className="text-sm font-medium text-gray-700 whitespace-nowrap pt-1.5 sm:pt-0">Filter:</span>
+          <div className="flex items-center gap-2 flex-wrap overflow-x-auto pb-1 -mb-1">
+            <Link
+              href="/admin/buttons"
+              className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap min-h-[36px] flex items-center ${
+                categoryFilter === 'all'
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All
+            </Link>
+            {categoryTree.map((cat) => (
+              <CategoryFilterLink
+                key={cat.id}
+                category={cat}
+                currentFilter={categoryFilter}
+                depth={0}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -232,7 +234,7 @@ function CategoryFilterLink({
     <>
       <Link
         href={`/admin/buttons?category=${category.id}`}
-        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+        className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap min-h-[36px] flex items-center ${
           isActive
             ? 'bg-teal-600 text-white'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
