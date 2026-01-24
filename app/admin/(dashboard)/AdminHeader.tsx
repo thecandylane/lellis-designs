@@ -9,7 +9,7 @@ export default function AdminHeader({ email }: { email: string }) {
 
   async function handleLogout() {
     await fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
-    router.push('/admin')
+    router.push('/admin/login')
     router.refresh()
   }
 

@@ -34,8 +34,8 @@ export async function middleware(request: NextRequest) {
   const isCustomAdminRoute = customAdminRoutes.some(route => path.startsWith(route))
 
   if (isCustomAdminRoute && !token) {
-    // Redirect to Payload admin login
-    const response = NextResponse.redirect(new URL('/admin', request.url))
+    // Redirect to admin login page
+    const response = NextResponse.redirect(new URL('/admin/login', request.url))
     return addSecurityHeaders(response)
   }
 
