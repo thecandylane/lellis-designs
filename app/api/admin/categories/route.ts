@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         slug,
-        parent: parent || null,
+        parent: parent ? Number(parent) : null,
         active: true,
         sortOrder: 0,
       },

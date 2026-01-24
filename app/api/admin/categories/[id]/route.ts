@@ -13,10 +13,16 @@ export async function PATCH(
     const body = await request.json()
     const payload = await getPayload({ config })
 
+    // Sanitize parent ID - convert string to number for relationship field
+    const data = { ...body }
+    if (data.parent !== undefined) {
+      data.parent = data.parent ? Number(data.parent) : null
+    }
+
     await payload.update({
       collection: 'categories',
       id,
-      data: body,
+      data,
     })
 
     return NextResponse.json({ success: true })
