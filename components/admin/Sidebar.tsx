@@ -60,13 +60,13 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-5 border-b border-gray-200">
+      <div className="p-5 border-b border-border bg-muted/50">
         <Link
           href="/admin/orders"
           className="flex items-center gap-3"
           onClick={onNavigate}
         >
-          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-background">
             <Image
               src="/logo.png"
               alt="L. Ellis Designs"
@@ -75,8 +75,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             />
           </div>
           <div>
-            <span className="font-bold text-gray-900">L. Ellis Designs</span>
-            <span className="block text-xs text-gray-500">Admin</span>
+            <span className="font-bold text-foreground">L. Ellis Designs</span>
+            <span className="block text-xs text-muted-foreground">Admin</span>
           </div>
         </Link>
       </div>
@@ -95,14 +95,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all min-h-[44px] ${
                     isActive
-                      ? 'bg-teal-50 text-teal-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-teal-600' : 'text-gray-400'}`} />
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
                   <div>
                     <span className="block">{item.label}</span>
-                    <span className={`text-xs ${isActive ? 'text-teal-600' : 'text-gray-400'}`}>
+                    <span className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground/70'}`}>
                       {item.description}
                     </span>
                   </div>
@@ -114,12 +114,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-border">
         <Link
           href="/"
           target="_blank"
           onClick={onNavigate}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors min-h-[44px]"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -134,7 +134,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 // Desktop sidebar - hidden on mobile
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 min-h-screen flex-col">
+    <aside className="hidden md:flex w-64 bg-card border-r border-border min-h-screen flex-col">
       <SidebarContent />
     </aside>
   )
@@ -148,13 +148,13 @@ export function MobileSidebarTrigger() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
-          className="md:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0 bg-white">
+      <SheetContent side="left" className="w-64 p-0 bg-card">
         <SheetHeader className="sr-only">
           <SheetTitle>Admin Navigation</SheetTitle>
         </SheetHeader>
