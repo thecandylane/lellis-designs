@@ -129,9 +129,22 @@ export const Categories: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
-      async ({ data, req, operation }) => {
+      async ({ data, req, operation, originalDoc }) => {
         // Validate unique slug per parent
         if (data?.slug && req.payload) {
+          // Skip if this is an update and slug/parent haven't changed
+          if (operation === 'update' && originalDoc) {
+            const originalParentId = typeof originalDoc.parent === 'object'
+              ? originalDoc.parent?.id
+              : originalDoc.parent
+            const slugUnchanged = data.slug === originalDoc.slug
+            const parentUnchanged = data.parent === originalParentId
+
+            if (slugUnchanged && parentUnchanged) {
+              return data
+            }
+          }
+
           const existing = await req.payload.find({
             collection: 'categories',
             where: {

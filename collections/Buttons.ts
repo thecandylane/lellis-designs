@@ -93,6 +93,14 @@ export const Buttons: CollectionConfig = {
       },
     },
     {
+      name: 'sortOrder',
+      type: 'number',
+      defaultValue: 0,
+      admin: {
+        description: 'Order within category (lower numbers appear first)',
+      },
+    },
+    {
       name: 'sku',
       type: 'text',
       unique: true,
