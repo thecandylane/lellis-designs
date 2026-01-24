@@ -1,14 +1,15 @@
-import { Resend } from 'resend'
+import type { Resend } from 'resend'
 
 // Lazy-load Resend client to avoid build errors when API key isn't set
 let resendClient: Resend | null = null
 
-function getResend(): Resend {
+async function getResend(): Promise<Resend> {
   if (!resendClient) {
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
       throw new Error('RESEND_API_KEY environment variable is not set')
     }
+    const { Resend } = await import('resend')
     resendClient = new Resend(apiKey)
   }
   return resendClient
@@ -146,7 +147,8 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
     </div>
   `
 
-  return getResend().emails.send({
+  const resend = await getResend()
+  return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
     subject: `Order Confirmed - ${orderId.slice(0, 8).toUpperCase()}`,
@@ -203,7 +205,8 @@ export async function sendAdminOrderNotification(data: OrderEmailData) {
     </div>
   `
 
-  return getResend().emails.send({
+  const resend = await getResend()
+  return resend.emails.send({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `🛒 New Order: ${formatCurrency(total)} - ${totalQuantity} buttons`,
@@ -252,7 +255,8 @@ export async function sendReadyForPickup(data: {
     </div>
   `
 
-  return getResend().emails.send({
+  const resend = await getResend()
+  return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
     subject: `Your Buttons are Ready for Pickup! - ${orderId.slice(0, 8).toUpperCase()}`,
@@ -303,7 +307,8 @@ export async function sendShippedNotification(data: {
     </div>
   `
 
-  return getResend().emails.send({
+  const resend = await getResend()
+  return resend.emails.send({
     from: FROM_EMAIL,
     to: customerEmail,
     subject: `Your Order Has Shipped! - ${orderId.slice(0, 8).toUpperCase()}`,
@@ -359,7 +364,8 @@ export async function sendAdminCustomRequestNotification(data: {
     </div>
   `
 
-  return getResend().emails.send({
+  const resend = await getResend()
+  return resend.emails.send({
     from: FROM_EMAIL,
     to: ADMIN_EMAIL,
     subject: `🎨 Custom Request: ${quantity} buttons - ${customerName}${isRush ? ' ⚡ RUSH' : ''}`,
