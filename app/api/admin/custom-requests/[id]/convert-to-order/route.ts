@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
 import { getStripe } from '@/lib/stripe'
+import { sendCustomerQuote } from '@/lib/email'
 
 type Params = Promise<{ id: string }>
 
 type ConvertRequest = {
-  paymentMethod: 'stripe' | 'cash' | 'venmo' | 'other'
+  paymentMethod: 'stripe' | 'other'
   shippingMethod?: 'pickup' | 'ups'
 }
 
@@ -202,6 +203,28 @@ export async function POST(
           stripeSessionId: session.id,
         },
       })
+
+      // Send email with payment link to customer
+      if (paymentUrl) {
+        try {
+          await sendCustomerQuote({
+            requestId: id,
+            customerEmail: customRequest.customerEmail,
+            customerName: customRequest.customerName,
+            quotedPrice: subtotal,
+            rushFee: rushFee || undefined,
+            quantity,
+            description: customRequest.designDetails?.description || 'Custom button order',
+            paymentUrl,
+            neededByDate: customRequest.orderDetails?.neededByDate,
+            shippingMethod: finalShippingMethod,
+            shippingCost,
+          })
+        } catch (emailError) {
+          console.error('Failed to send quote email:', emailError)
+          // Don't fail the request, the order was created successfully
+        }
+      }
     } catch (error) {
       console.error('Error creating Stripe session:', error)
       // Order was created but payment link failed - return partial success
@@ -217,5 +240,6 @@ export async function POST(
     success: true,
     orderId: order.id,
     ...(paymentUrl && { paymentUrl }),
+    emailSent: paymentMethod === 'stripe' && !!paymentUrl,
   })
 }
