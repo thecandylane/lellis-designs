@@ -23,8 +23,13 @@ export const metadata: Metadata = {
   title: "L. Ellis Designs - Custom 3\" Buttons",
   description: "Custom 3\" buttons for every occasion. $5 each with bulk discounts for large orders. Louisiana-based with fast turnaround.",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/logo.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/logo.png",
   },
   openGraph: {
     title: "L. Ellis Designs - Custom 3\" Buttons",
