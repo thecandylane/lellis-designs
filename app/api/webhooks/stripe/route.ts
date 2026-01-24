@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { getPayload } from '@/lib/payload'
 import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import Stripe from 'stripe'
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -47,7 +47,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const payload = await getPayload()
 
   // Retrieve the complete session to get all details
-  const fullSession = await stripe.checkout.sessions.retrieve(session.id)
+  const fullSession = await getStripe().checkout.sessions.retrieve(session.id)
 
   const metadata = fullSession.metadata || {}
   const email = metadata.email || fullSession.customer_email || ''
