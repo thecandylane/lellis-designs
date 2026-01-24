@@ -16,6 +16,27 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload({ config })
 
+    // Validate parent exists if provided
+    if (parent) {
+      try {
+        const parentCategory = await payload.findByID({
+          collection: 'categories',
+          id: parent,
+        })
+        if (!parentCategory) {
+          return NextResponse.json(
+            { error: 'Parent category not found' },
+            { status: 400 }
+          )
+        }
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid parent category ID' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Generate slug from name
     const slug = name
       .toLowerCase()

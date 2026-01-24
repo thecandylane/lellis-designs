@@ -77,6 +77,7 @@ type CategoryNode = {
   description?: string | null
   active: boolean
   buttonCount: number
+  sortOrder: number
   children: CategoryNode[]
 }
 
@@ -96,6 +97,7 @@ function buildTree(
       description: cat.description,
       active: cat.active,
       buttonCount: counts.get(cat.id) || 0,
+      sortOrder: cat.sortOrder,
       children: [],
     })
   }
