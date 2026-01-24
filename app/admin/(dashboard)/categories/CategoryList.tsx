@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   DndContext,
@@ -32,6 +32,47 @@ type CategoryNode = {
   children: CategoryNode[]
 }
 
+// Helper to update children of a specific parent in the tree
+function updateChildrenInTree(
+  items: CategoryNode[],
+  parentId: string | null,
+  newChildren: CategoryNode[]
+): CategoryNode[] {
+  if (parentId === null) {
+    return newChildren
+  }
+
+  return items.map((item) => {
+    if (item.id === parentId) {
+      return { ...item, children: newChildren }
+    }
+    if (item.children.length > 0) {
+      return { ...item, children: updateChildrenInTree(item.children, parentId, newChildren) }
+    }
+    return item
+  })
+}
+
+// Helper to find children of a specific parent
+function findChildren(items: CategoryNode[], parentId: string | null): CategoryNode[] {
+  if (parentId === null) {
+    return items
+  }
+
+  for (const item of items) {
+    if (item.id === parentId) {
+      return item.children
+    }
+    if (item.children.length > 0) {
+      const found = findChildren(item.children, parentId)
+      if (found.length > 0) {
+        return found
+      }
+    }
+  }
+  return []
+}
+
 export default function CategoryList({ categories }: { categories: CategoryNode[] }) {
   const router = useRouter()
   const [items, setItems] = useState(categories)
@@ -48,40 +89,59 @@ export default function CategoryList({ categories }: { categories: CategoryNode[
     })
   )
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleReorder = useCallback(async (
+    parentId: string | null,
+    activeId: string,
+    overId: string
+  ) => {
+    const siblings = findChildren(items, parentId)
+    const oldIndex = siblings.findIndex((item) => item.id === activeId)
+    const newIndex = siblings.findIndex((item) => item.id === overId)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const newSiblings = arrayMove(siblings, oldIndex, newIndex)
+    const newItems = updateChildrenInTree(items, parentId, newSiblings)
+    setItems(newItems)
+
+    // Calculate new sort orders for siblings only
+    const updates = newSiblings.map((item, index) => ({
+      id: item.id,
+      sortOrder: index,
+    }))
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/categories/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: updates }),
+      })
+      if (!response.ok) throw new Error('Failed to save order')
+      router.refresh()
+    } catch (err) {
+      console.error('Failed to save order:', err)
+      // Revert on failure
+      setItems(categories)
+    } finally {
+      setSaving(false)
+    }
+  }, [items, categories, router])
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((item) => item.id === active.id)
-      const newIndex = items.findIndex((item) => item.id === over.id)
+      // Get parent info from sortable data
+      const activeParentId = (active.data.current?.parentId as string | null) ?? null
+      const overParentId = (over.data.current?.parentId as string | null) ?? null
 
-      const newItems = arrayMove(items, oldIndex, newIndex)
-      setItems(newItems)
-
-      // Calculate new sort orders
-      const updates = newItems.map((item, index) => ({
-        id: item.id,
-        sortOrder: index,
-      }))
-
-      setSaving(true)
-      try {
-        const response = await fetch('/api/admin/categories/reorder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: updates }),
-        })
-        if (!response.ok) throw new Error('Failed to save order')
-        router.refresh()
-      } catch (err) {
-        console.error('Failed to save order:', err)
-        // Revert on failure
-        setItems(categories)
-      } finally {
-        setSaving(false)
+      // Only allow reordering within the same parent
+      if (activeParentId === overParentId) {
+        await handleReorder(activeParentId, active.id as string, over.id as string)
       }
     }
-  }
+  }, [handleReorder])
 
   return (
     <div className="divide-y divide-gray-100 relative">
@@ -97,7 +157,12 @@ export default function CategoryList({ categories }: { categories: CategoryNode[
       >
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           {items.map((category) => (
-            <SortableCategoryRow key={category.id} category={category} depth={0} />
+            <SortableCategoryRow
+              key={category.id}
+              category={category}
+              depth={0}
+              parentId={null}
+            />
           ))}
         </SortableContext>
       </DndContext>
@@ -105,7 +170,15 @@ export default function CategoryList({ categories }: { categories: CategoryNode[
   )
 }
 
-function SortableCategoryRow({ category, depth }: { category: CategoryNode; depth: number }) {
+function SortableCategoryRow({
+  category,
+  depth,
+  parentId,
+}: {
+  category: CategoryNode
+  depth: number
+  parentId: string | null
+}) {
   const {
     attributes,
     listeners,
@@ -113,7 +186,10 @@ function SortableCategoryRow({ category, depth }: { category: CategoryNode; dept
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: category.id, disabled: depth > 0 })
+  } = useSortable({
+    id: category.id,
+    data: { parentId },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -127,7 +203,8 @@ function SortableCategoryRow({ category, depth }: { category: CategoryNode; dept
       <CategoryRow
         category={category}
         depth={depth}
-        dragHandleProps={depth === 0 ? { ...attributes, ...listeners } : undefined}
+        parentId={parentId}
+        dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
       />
     </div>
@@ -141,11 +218,13 @@ type DragHandleProps = {
 function CategoryRow({
   category,
   depth,
+  parentId,
   dragHandleProps,
   isDragging,
 }: {
   category: CategoryNode
   depth: number
+  parentId: string | null
   dragHandleProps?: DragHandleProps
   isDragging?: boolean
 }) {
@@ -199,8 +278,8 @@ function CategoryRow({
       >
         {/* Top row: Drag Handle + Expand + Name + Count */}
         <div className="flex items-center gap-1 flex-1 min-w-0">
-          {/* Drag Handle - only for top-level */}
-          {depth === 0 && dragHandleProps ? (
+          {/* Drag Handle */}
+          {dragHandleProps ? (
             <button
               {...dragHandleProps}
               className="p-2 -ml-2 rounded cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center touch-none"
@@ -287,11 +366,22 @@ function CategoryRow({
         )}
       </div>
 
-      {/* Children - not sortable at nested levels for now */}
-      {expanded &&
-        category.children.map((child) => (
-          <CategoryRow key={child.id} category={child} depth={depth + 1} />
-        ))}
+      {/* Children - sortable within their parent */}
+      {expanded && category.children.length > 0 && (
+        <SortableContext
+          items={category.children.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {category.children.map((child) => (
+            <SortableCategoryRow
+              key={child.id}
+              category={child}
+              depth={depth + 1}
+              parentId={category.id}
+            />
+          ))}
+        </SortableContext>
+      )}
     </>
   )
 }
