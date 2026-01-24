@@ -97,45 +97,117 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const shippingCost = shippingCostCents / 100
   const total = totalCents / 100
 
-  // Create the order in Payload
-  const orderData = {
-    stripeSessionId: session.id,
-    customerEmail: email,
-    customerName: customerName,
-    neededByDate: neededByDate,
-    items: items,
-    shippingMethod: shippingMethod,
-    shippingAddress: shippingAddress,
-    shippingCost: shippingCost,
-    subtotal: subtotal,
-    total: total,
-    status: 'paid' as const,
-    ambassadorCode: ambassadorCode,
+  // Define order type to help TypeScript
+  type Order = {
+    id: string
+    customerEmail: string
+    customerName?: string | null
+    items: typeof items
+    subtotal: number
+    shippingCost: number
+    total: number
+    neededByDate?: string | null
+    shippingMethod: 'pickup' | 'ups'
+    shippingAddress?: typeof shippingAddress
   }
 
-  const order = await payload.create({
-    collection: 'orders',
-    data: orderData,
-  })
+  let order: Order
 
-  // Send emails (don't let email failures break the order)
-  try {
-    const emailData = {
-      orderId: String(order.id),
+  // Check if this is a custom order payment (order already exists)
+  if (metadata.orderType === 'custom' && metadata.orderId) {
+    // Update existing order instead of creating new
+    const updatedOrder = await payload.update({
+      collection: 'orders',
+      id: metadata.orderId,
+      data: {
+        status: 'paid',
+        stripeSessionId: session.id,
+        // Add shipping address if collected
+        ...(shippingAddress && { shippingAddress }),
+        ...(customerName && { customerName }),
+      },
+    })
+
+    // Update custom request status to 'production'
+    if (metadata.customRequestId) {
+      try {
+        await payload.update({
+          collection: 'custom-requests',
+          id: metadata.customRequestId,
+          data: { status: 'production' },
+        })
+      } catch (error) {
+        console.error('Failed to update custom request status:', error)
+      }
+    }
+
+    // Fetch the full order for email data
+    order = {
+      id: String(updatedOrder.id),
+      customerEmail: String(updatedOrder.customerEmail || email),
+      customerName: updatedOrder.customerName as string | null,
+      items: (updatedOrder.items || []) as typeof items,
+      subtotal: Number(updatedOrder.subtotal) || subtotal,
+      shippingCost: Number(updatedOrder.shippingCost) || shippingCost,
+      total: Number(updatedOrder.total) || total,
+      neededByDate: updatedOrder.neededByDate as string | null,
+      shippingMethod: (updatedOrder.shippingMethod as 'pickup' | 'ups') || 'pickup',
+      shippingAddress: shippingAddress,
+    }
+  } else {
+    // Standard order - create new
+    const orderData = {
+      stripeSessionId: session.id,
       customerEmail: email,
-      customerName: customerName || undefined,
+      customerName: customerName,
+      neededByDate: neededByDate,
+      items: items,
+      shippingMethod: shippingMethod,
+      shippingAddress: shippingAddress,
+      shippingCost: shippingCost,
+      subtotal: subtotal,
+      total: total,
+      status: 'paid' as const,
+      ambassadorCode: ambassadorCode,
+    }
+
+    const newOrder = await payload.create({
+      collection: 'orders',
+      data: orderData,
+    })
+
+    order = {
+      id: String(newOrder.id),
+      customerEmail: email,
+      customerName: customerName,
       items: items,
       subtotal,
       shippingCost,
       total,
-      neededByDate: neededByDate || undefined,
+      neededByDate,
       shippingMethod,
-      shippingAddress: shippingAddress ? {
-        line1: shippingAddress.line1 || '',
-        line2: shippingAddress.line2 || undefined,
-        city: shippingAddress.city || '',
-        state: shippingAddress.state || '',
-        postal_code: shippingAddress.postal_code || '',
+      shippingAddress,
+    }
+  }
+
+  // Send emails (don't let email failures break the order)
+  try {
+    const emailData = {
+      orderId: order.id,
+      customerEmail: order.customerEmail,
+      customerName: order.customerName || undefined,
+      items: order.items,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+      total: order.total,
+      neededByDate: order.neededByDate || undefined,
+      shippingMethod: order.shippingMethod,
+      shippingAddress: order.shippingAddress ? {
+        line1: order.shippingAddress.line1 || '',
+        line2: order.shippingAddress.line2 || undefined,
+        city: order.shippingAddress.city || '',
+        state: order.shippingAddress.state || '',
+        postal_code: order.shippingAddress.postal_code || '',
       } : undefined,
     }
 

@@ -12,7 +12,6 @@ import {
   Loader2,
   ShoppingBag,
   CreditCard,
-  Banknote,
   ExternalLink,
 } from 'lucide-react'
 
@@ -62,7 +61,7 @@ export default function RequestActions({
   const [showOrderForm, setShowOrderForm] = useState(false)
   const [quoteAmount, setQuoteAmount] = useState(quotedPrice?.toString() || '')
   const [notes, setNotes] = useState('')
-  const [orderPaymentMethod, setOrderPaymentMethod] = useState<'stripe' | 'cash' | 'venmo' | 'other'>('stripe')
+  const [orderPaymentMethod, setOrderPaymentMethod] = useState<'stripe' | 'other'>('stripe')
   const [orderShippingMethod, setOrderShippingMethod] = useState<'pickup' | 'ups'>(
     deliveryPreference === 'ship' ? 'ups' : 'pickup'
   )
@@ -125,10 +124,14 @@ export default function RequestActions({
         throw new Error(data.error || 'Failed to create order')
       }
 
-      // If Stripe, open payment link in new tab
+      // If Stripe, show success message (email was sent automatically)
       if (data.paymentUrl) {
-        window.open(data.paymentUrl, '_blank')
-        alert(`Order created! Payment link opened in new tab.\n\nYou can also send this link to the customer:\n${data.paymentUrl}`)
+        if (data.emailSent) {
+          alert('Order created! Payment link has been emailed to the customer.')
+        } else {
+          window.open(data.paymentUrl, '_blank')
+          alert(`Order created! Payment link opened in new tab.\n\nYou can also send this link to the customer:\n${data.paymentUrl}`)
+        }
       } else {
         alert('Order created successfully!')
       }
@@ -247,66 +250,32 @@ export default function RequestActions({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Payment Method
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setOrderPaymentMethod('stripe')}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                className={`p-4 rounded-lg border-2 transition-colors ${
                   orderPaymentMethod === 'stripe'
                     ? 'border-teal-500 bg-teal-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <CreditCard className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Stripe</div>
-                  <div className="text-xs text-gray-500">Send payment link</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderPaymentMethod('cash')}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
-                  orderPaymentMethod === 'cash'
-                    ? 'border-teal-500 bg-teal-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <Banknote className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Cash</div>
-                  <div className="text-xs text-gray-500">Already paid</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderPaymentMethod('venmo')}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
-                  orderPaymentMethod === 'venmo'
-                    ? 'border-teal-500 bg-teal-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <DollarSign className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Venmo</div>
-                  <div className="text-xs text-gray-500">Already paid</div>
-                </div>
+                <CreditCard className="w-5 h-5 mx-auto mb-2" />
+                <div className="font-medium text-sm">Send Payment Link</div>
+                <div className="text-xs text-gray-500">Email Stripe checkout to customer</div>
               </button>
               <button
                 type="button"
                 onClick={() => setOrderPaymentMethod('other')}
-                className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                className={`p-4 rounded-lg border-2 transition-colors ${
                   orderPaymentMethod === 'other'
                     ? 'border-teal-500 bg-teal-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <CheckCircle className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-medium text-sm">Other</div>
-                  <div className="text-xs text-gray-500">Mark as paid</div>
-                </div>
+                <CheckCircle className="w-5 h-5 mx-auto mb-2" />
+                <div className="font-medium text-sm">Already Paid</div>
+                <div className="text-xs text-gray-500">Cash, Venmo, or other</div>
               </button>
             </div>
           </div>

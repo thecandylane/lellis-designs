@@ -369,6 +369,160 @@ export async function sendAdminContactNotification(data: {
   })
 }
 
+// Email to customer with quote and payment link
+export async function sendCustomerQuote(data: {
+  requestId: string
+  customerEmail: string
+  customerName: string
+  quotedPrice: number
+  rushFee?: number
+  quantity: number
+  description: string
+  paymentUrl: string
+  neededByDate?: string
+  shippingMethod?: 'pickup' | 'ups'
+  shippingCost?: number
+}) {
+  const { requestId, customerEmail, customerName, quotedPrice, rushFee, quantity, description, paymentUrl, neededByDate, shippingMethod, shippingCost } = data
+
+  const total = quotedPrice + (rushFee || 0) + (shippingCost || 0)
+  const firstName = customerName.split(' ')[0]
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%); padding: 32px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Your Custom Quote is Ready!</h1>
+      </div>
+
+      <div style="padding: 32px; background: #fff;">
+        <p style="font-size: 16px; color: #333;">
+          Hi ${firstName}! We've prepared a quote for your custom button order.
+        </p>
+
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">Order Summary</h2>
+          <p style="margin: 8px 0;"><strong>Quantity:</strong> ${quantity} buttons</p>
+          <p style="margin: 8px 0;"><strong>Description:</strong> ${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
+          ${neededByDate ? `<p style="margin: 8px 0;"><strong>Needed By:</strong> ${formatDate(neededByDate)}</p>` : ''}
+          <p style="margin: 8px 0;"><strong>Delivery:</strong> ${shippingMethod === 'ups' ? 'UPS Shipping' : 'Local Pickup'}</p>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #22c55e; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #16a34a;">Quote Breakdown</h2>
+          <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+            <span>Custom Buttons (${quantity}):</span>
+            <span>${formatCurrency(quotedPrice)}</span>
+          </p>
+          ${rushFee ? `
+          <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+            <span>Rush Fee:</span>
+            <span>${formatCurrency(rushFee)}</span>
+          </p>
+          ` : ''}
+          ${shippingCost ? `
+          <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+            <span>Shipping:</span>
+            <span>${formatCurrency(shippingCost)}</span>
+          </p>
+          ` : ''}
+          <hr style="border: none; border-top: 1px solid #22c55e; margin: 16px 0;" />
+          <p style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 20px; font-weight: bold;">
+            <span>Total:</span>
+            <span style="color: #16a34a;">${formatCurrency(total)}</span>
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${paymentUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%); color: white; padding: 16px 48px; text-decoration: none; border-radius: 8px; font-size: 18px; font-weight: bold;">
+            Pay Now
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px; text-align: center;">
+          Questions? Reply to this email or contact us at any time.
+        </p>
+      </div>
+
+      <div style="background: #333; padding: 24px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 14px;">
+          L. Ellis Designs • Custom 3" Buttons • Louisiana
+        </p>
+        <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
+          Request ID: ${requestId.slice(0, 8).toUpperCase()}
+        </p>
+      </div>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: `Your Custom Button Quote - ${formatCurrency(total)}`,
+    html,
+  })
+}
+
+// Email to resend payment link
+export async function sendPaymentLink(data: {
+  customerEmail: string
+  customerName: string
+  total: number
+  paymentUrl: string
+  orderId: string
+}) {
+  const { customerEmail, customerName, total, paymentUrl, orderId } = data
+  const firstName = customerName.split(' ')[0]
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 32px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Payment Link</h1>
+      </div>
+
+      <div style="padding: 32px; background: #fff;">
+        <p style="font-size: 16px; color: #333;">
+          Hi ${firstName}! Here's your payment link for your custom button order.
+        </p>
+
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">Amount Due</p>
+          <p style="margin: 0; font-size: 32px; font-weight: bold; color: #2563eb;">${formatCurrency(total)}</p>
+        </div>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${paymentUrl}"
+             style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 16px 48px; text-decoration: none; border-radius: 8px; font-size: 18px; font-weight: bold;">
+            Complete Payment
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px; text-align: center;">
+          Questions? Reply to this email or contact us at any time.
+        </p>
+      </div>
+
+      <div style="background: #333; padding: 24px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 14px;">
+          L. Ellis Designs • Custom 3" Buttons • Louisiana
+        </p>
+        <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
+          Order ID: ${orderId.slice(0, 8).toUpperCase()}
+        </p>
+      </div>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: `Payment Link - ${formatCurrency(total)} - L. Ellis Designs`,
+    html,
+  })
+}
+
 // Email to admin when new custom request comes in
 export async function sendAdminCustomRequestNotification(data: {
   requestId: string
