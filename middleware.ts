@@ -39,11 +39,17 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(response)
   }
 
-  // After login, redirect from Payload admin root to our orders page
-  // But allow /admin/api/* for Payload API and /admin for login
-  if (path === '/admin' && token) {
-    const response = NextResponse.redirect(new URL('/admin/orders', request.url))
-    return addSecurityHeaders(response)
+  // Handle /admin route
+  if (path === '/admin') {
+    if (token) {
+      // Authenticated: go to dashboard
+      const response = NextResponse.redirect(new URL('/admin/orders', request.url))
+      return addSecurityHeaders(response)
+    } else {
+      // Not authenticated: go to login
+      const response = NextResponse.redirect(new URL('/admin/login', request.url))
+      return addSecurityHeaders(response)
+    }
   }
 
   const response = NextResponse.next()
