@@ -554,9 +554,9 @@ export default function CustomRequestPage() {
                     value={formData.quantity}
                     onChange={handleInputChange}
                     required
-                    min="1"
+                    min="5"
                     className="w-full px-4 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                    placeholder="Approximate quantity"
+                    placeholder="Minimum 5 buttons"
                   />
                 </div>
 

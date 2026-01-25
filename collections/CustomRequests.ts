@@ -209,9 +209,9 @@ export const CustomRequests: CollectionConfig = {
               label: 'How Many Buttons?',
               type: 'number',
               required: true,
-              min: 1,
+              min: 5,
               admin: {
-                description: 'Approximate quantity needed',
+                description: 'Minimum 5 buttons per custom order',
               },
             },
             {

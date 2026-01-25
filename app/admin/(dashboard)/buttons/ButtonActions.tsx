@@ -104,7 +104,7 @@ export default function ButtonActions({
           name: editData.name,
           description: editData.description || null,
           price: editData.price,
-          category: editData.category ? Number(editData.category) : null,
+          category: editData.category || null,
         }),
       })
 

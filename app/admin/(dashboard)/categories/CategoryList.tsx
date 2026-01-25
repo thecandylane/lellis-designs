@@ -77,6 +77,46 @@ function findChildren(items: CategoryNode[], parentId: string | null): CategoryN
   return []
 }
 
+// Helper to flatten all categories into a single array
+function flattenCategories(items: CategoryNode[]): CategoryNode[] {
+  const result: CategoryNode[] = []
+  for (const item of items) {
+    result.push(item)
+    if (item.children.length > 0) {
+      result.push(...flattenCategories(item.children))
+    }
+  }
+  return result
+}
+
+// Helper to check if a category is a descendant of another
+function isDescendantOf(categories: CategoryNode[], targetId: string, potentialAncestorId: string): boolean {
+  // Find the potential ancestor
+  const findNode = (items: CategoryNode[], id: string): CategoryNode | null => {
+    for (const item of items) {
+      if (item.id === id) return item
+      if (item.children.length > 0) {
+        const found = findNode(item.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  // Check if target is in the ancestor's subtree
+  const checkDescendants = (node: CategoryNode, targetId: string): boolean => {
+    for (const child of node.children) {
+      if (child.id === targetId) return true
+      if (checkDescendants(child, targetId)) return true
+    }
+    return false
+  }
+
+  const ancestor = findNode(categories, potentialAncestorId)
+  if (!ancestor) return false
+  return checkDescendants(ancestor, targetId)
+}
+
 export default function CategoryList({ categories }: { categories: CategoryNode[] }) {
   const router = useRouter()
   const [items, setItems] = useState(categories)
@@ -171,6 +211,7 @@ export default function CategoryList({ categories }: { categories: CategoryNode[
               category={category}
               depth={0}
               parentId={null}
+              allCategories={items}
             />
           ))}
         </SortableContext>
@@ -183,10 +224,12 @@ function SortableCategoryRow({
   category,
   depth,
   parentId,
+  allCategories,
 }: {
   category: CategoryNode
   depth: number
   parentId: string | null
+  allCategories: CategoryNode[]
 }) {
   const {
     attributes,
@@ -213,6 +256,7 @@ function SortableCategoryRow({
         category={category}
         depth={depth}
         parentId={parentId}
+        allCategories={allCategories}
         dragHandleProps={{ ...attributes, ...listeners }}
         isDragging={isDragging}
       />
@@ -228,12 +272,14 @@ function CategoryRow({
   category,
   depth,
   parentId,
+  allCategories,
   dragHandleProps,
   isDragging,
 }: {
   category: CategoryNode
   depth: number
   parentId: string | null
+  allCategories: CategoryNode[]
   dragHandleProps?: DragHandleProps
   isDragging?: boolean
 }) {
@@ -248,6 +294,7 @@ function CategoryRow({
   const [editColorPrimary, setEditColorPrimary] = useState(category.colorPrimary || '')
   const [editColorSecondary, setEditColorSecondary] = useState(category.colorSecondary || '')
   const [previewIcon, setPreviewIcon] = useState<string | null>(category.iconUrl || null)
+  const [editParent, setEditParent] = useState<string | null>(parentId)
 
   const hasChildren = category.children.length > 0
 
@@ -322,6 +369,7 @@ function CategoryRow({
           colorPrimary: editColorPrimary || null,
           colorSecondary: editColorSecondary || null,
           iconUrl: previewIcon,
+          parent: editParent,
         }),
       })
       if (!response.ok) throw new Error('Failed')
@@ -341,8 +389,19 @@ function CategoryRow({
     setEditColorPrimary(category.colorPrimary || '')
     setEditColorSecondary(category.colorSecondary || '')
     setPreviewIcon(category.iconUrl || null)
+    setEditParent(parentId)
     setShowEdit(true)
   }
+
+  // Get all categories flattened for the parent selector
+  const flatCategories = flattenCategories(allCategories)
+
+  // Filter out self and descendants to prevent cycles
+  const validParentOptions = flatCategories.filter(cat => {
+    if (cat.id === category.id) return false // Can't be own parent
+    if (isDescendantOf(allCategories, cat.id, category.id)) return false // Can't be child's child
+    return true
+  })
 
   return (
     <>
@@ -570,6 +629,25 @@ function CategoryRow({
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parent Category
+                </label>
+                <select
+                  value={editParent || ''}
+                  onChange={(e) => setEditParent(e.target.value || null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="">None (Root Category)</option>
+                  {validParentOptions.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Move this category under a different parent, or make it a root category
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -646,6 +724,7 @@ function CategoryRow({
               category={child}
               depth={depth + 1}
               parentId={category.id}
+              allCategories={allCategories}
             />
           ))}
         </SortableContext>
