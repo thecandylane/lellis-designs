@@ -330,11 +330,7 @@ function OrderCard({ order }: { order: Order }) {
       {/* Actions Footer */}
       {order.status !== 'completed' && order.status !== 'pending' && (
         <div className="px-4 sm:px-5 py-4 bg-muted/50 border-t border-border/50">
-          <OrderActions
-            orderId={order.id}
-            currentStatus={order.status}
-            shippingMethod={order.shipping_method}
-          />
+          <OrderActions order={order} />
         </div>
       )}
     </div>
