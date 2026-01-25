@@ -84,10 +84,10 @@ export async function POST(
   const shippingCost = finalShippingMethod === 'ups' ? 8 : 0
   const total = subtotal + rushFee + shippingCost
 
-  // Create the order
+  // Create the order (customRequestId must be a number for the relationship field)
   const orderData = {
     orderType: 'custom' as const,
-    customRequestId: id,
+    customRequestId: Number(id),
     paymentMethod,
     customerEmail: customRequest.customerEmail,
     customerName: customRequest.customerName,

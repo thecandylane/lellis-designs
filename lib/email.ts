@@ -523,6 +523,94 @@ export async function sendPaymentLink(data: {
   })
 }
 
+// Email to customer when admin saves a quote (before order/payment link)
+export async function sendQuoteNotification(data: {
+  requestId: string
+  customerEmail: string
+  customerName: string
+  quotedPrice: number
+  rushFee?: number
+  quantity: number
+  description: string
+  neededByDate?: string
+}) {
+  const { requestId, customerEmail, customerName, quotedPrice, rushFee, quantity, description, neededByDate } = data
+
+  const total = quotedPrice + (rushFee || 0)
+  const firstName = customerName.split(' ')[0]
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); padding: 32px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Your Quote is Ready!</h1>
+      </div>
+
+      <div style="padding: 32px; background: #fff;">
+        <p style="font-size: 16px; color: #333;">
+          Hi ${firstName}! Thank you for your custom button request. We've prepared a quote for you.
+        </p>
+
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">Order Summary</h2>
+          <p style="margin: 8px 0;"><strong>Quantity:</strong> ${quantity} buttons</p>
+          <p style="margin: 8px 0;"><strong>Description:</strong> ${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
+          ${neededByDate ? `<p style="margin: 8px 0;"><strong>Needed By:</strong> ${formatDate(neededByDate)}</p>` : ''}
+        </div>
+
+        <div style="background: #f3e8ff; border: 1px solid #8B5CF6; padding: 20px; border-radius: 8px; margin: 24px 0;">
+          <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #7C3AED;">Quote</h2>
+          <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+            <span>Custom Buttons (${quantity}):</span>
+            <span>${formatCurrency(quotedPrice)}</span>
+          </p>
+          ${rushFee ? `
+          <p style="display: flex; justify-content: space-between; margin: 8px 0;">
+            <span>Rush Fee:</span>
+            <span>${formatCurrency(rushFee)}</span>
+          </p>
+          ` : ''}
+          <hr style="border: none; border-top: 1px solid #8B5CF6; margin: 16px 0;" />
+          <p style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 20px; font-weight: bold;">
+            <span>Total:</span>
+            <span style="color: #7C3AED;">${formatCurrency(total)}</span>
+          </p>
+          <p style="margin: 16px 0 0 0; font-size: 12px; color: #666;">
+            * Shipping costs will be added if applicable
+          </p>
+        </div>
+
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 24px 0;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            <strong>Next Steps:</strong> Please reply to this email or contact us to approve this quote.
+            Once approved, we'll send you a payment link to complete your order.
+          </p>
+        </div>
+
+        <p style="color: #666; font-size: 14px; text-align: center;">
+          Questions? Reply to this email or contact us at any time.
+        </p>
+      </div>
+
+      <div style="background: #333; padding: 24px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 14px;">
+          L. Ellis Designs • Custom 3" Buttons • Louisiana
+        </p>
+        <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
+          Request ID: ${requestId.slice(0, 8).toUpperCase()}
+        </p>
+      </div>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: `Your Custom Button Quote - ${formatCurrency(total)}`,
+    html,
+  })
+}
+
 // Email to admin when new custom request comes in
 export async function sendAdminCustomRequestNotification(data: {
   requestId: string

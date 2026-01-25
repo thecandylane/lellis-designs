@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { sendQuoteNotification } from '@/lib/email'
 
 type Params = Promise<{ id: string }>
 
@@ -46,6 +47,32 @@ export async function PATCH(
       id,
       data: updateData,
     })
+
+    // If status is being set to "quoted", send quote notification email
+    if (updateData.status === 'quoted') {
+      try {
+        const customRequest = await payload.findByID({
+          collection: 'custom-requests',
+          id,
+        })
+
+        if (customRequest) {
+          await sendQuoteNotification({
+            requestId: id,
+            customerEmail: customRequest.customerEmail as string,
+            customerName: customRequest.customerName as string,
+            quotedPrice: (customRequest.adminSection as { quotedPrice?: number })?.quotedPrice || 0,
+            rushFee: (customRequest.adminSection as { rushFee?: number })?.rushFee,
+            quantity: (customRequest.orderDetails as { quantity?: number })?.quantity || 1,
+            description: (customRequest.designDetails as { description?: string })?.description || '',
+            neededByDate: (customRequest.orderDetails as { neededByDate?: string })?.neededByDate,
+          })
+        }
+      } catch (emailError) {
+        console.error('Failed to send quote notification email:', emailError)
+        // Don't fail the request, the update was successful
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
