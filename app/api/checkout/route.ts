@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import type { CartItem } from '@/lib/types'
-import { getPricePerButton } from '@/lib/store'
+import { getPayload } from '@/lib/payload'
 
 type ShippingMethod = 'pickup' | 'ups'
 
@@ -12,7 +12,26 @@ type CheckoutRequest = {
   shippingMethod: ShippingMethod
 }
 
-const UPS_SHIPPING_COST = 800 // $8.00 in cents
+// Fetch pricing from SiteSettings
+async function getPricing() {
+  const payload = await getPayload()
+  const settings = await payload.findGlobal({ slug: 'site-settings' })
+  return {
+    singlePrice: settings.singlePrice ?? 5,
+    tier1Price: settings.tier1Price ?? 4.5,
+    tier1Threshold: settings.tier1Threshold ?? 100,
+    tier2Price: settings.tier2Price ?? 4,
+    tier2Threshold: settings.tier2Threshold ?? 200,
+    shippingCost: settings.shippingCost ?? 8,
+  }
+}
+
+// Calculate price per button based on quantity and pricing config
+function getPricePerButton(quantity: number, pricing: { singlePrice: number; tier1Price: number; tier1Threshold: number; tier2Price: number; tier2Threshold: number }) {
+  if (quantity >= pricing.tier2Threshold) return pricing.tier2Price
+  if (quantity >= pricing.tier1Threshold) return pricing.tier1Price
+  return pricing.singlePrice
+}
 
 // Security: Input validation limits
 const MAX_ITEMS = 100
@@ -92,8 +111,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid shipping method' }, { status: 400 })
     }
 
+    // Fetch dynamic pricing from SiteSettings
+    const pricing = await getPricing()
+
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
-    const pricePerItem = Math.round(getPricePerButton(totalQuantity) * 100) // Convert to cents
+    const pricePerItem = Math.round(getPricePerButton(totalQuantity, pricing) * 100) // Convert to cents
+    const shippingCostCents = Math.round(pricing.shippingCost * 100) // Convert to cents
     const origin = request.headers.get('origin') || 'http://localhost:3000'
 
     const lineItems = items.map((item) => {
@@ -152,7 +175,7 @@ export async function POST(request: NextRequest) {
             name: 'UPS Shipping',
             description: 'Flat rate shipping',
           },
-          unit_amount: UPS_SHIPPING_COST,
+          unit_amount: shippingCostCents,
         },
         quantity: 1,
       })

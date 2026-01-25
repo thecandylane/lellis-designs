@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Folder, Circle } from 'lucide-react'
+import Image from 'next/image'
 import type { Category } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -15,90 +15,82 @@ type CategoryCardProps = {
 export default function CategoryCard({
   category,
   href,
-  subcategoryCount = 0,
-  buttonCount = 0,
   className,
-  accentColor
 }: CategoryCardProps) {
-  const hasSubcategories = subcategoryCount > 0
-  const hasButtons = buttonCount > 0
-
-  // Use category's own colors if available, otherwise use passed accent or LSU purple/gold
-  const primaryColor = category.color_primary || accentColor || '#461D7C'
+  // Use category's own colors if available, otherwise use defaults
+  const primaryColor = category.color_primary || '#461D7C'
   const secondaryColor = category.color_secondary || '#FDD023'
+
+  // Generate a unique ID for this category's SVG path
+  const curveId = `curve-${category.id}`
 
   return (
     <Link
       href={href}
       className={cn(
-        "group relative bg-card rounded-xl border-2 border-border/50",
-        "shadow-md hover:shadow-2xl hover:-translate-y-2",
-        "transition-all duration-300 ease-out",
-        "p-5 pt-6 text-center flex flex-col items-center gap-2 overflow-hidden",
-        "min-h-[140px]",
+        "group flex flex-col items-center",
         className
       )}
-      style={{
-        '--card-accent': primaryColor,
-        '--card-accent-light': `${primaryColor}15`,
-      } as React.CSSProperties}
     >
-      {/* Subtle gradient background fill */}
-      <div
-        className="absolute inset-0 opacity-[0.03] transition-opacity duration-300 group-hover:opacity-[0.08]"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-        }}
-      />
+      {/* Container for button and curved text */}
+      <div className="relative">
+        {/* Pulsing glow effect on hover */}
+        <div className="absolute inset-0 rounded-full bg-secondary/30 blur-xl opacity-0 group-hover:opacity-100 group-hover:animate-pulse transition-opacity duration-300" />
 
-      {/* Color accent bar at top with hover animation */}
-      <div
-        className="absolute top-0 left-0 right-0 h-1.5 rounded-t-xl transition-all duration-300 group-hover:h-2"
-        style={{
-          background: `linear-gradient(90deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
-        }}
-      />
-
-      <div
-        className="w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
-        style={{
-          backgroundColor: `${primaryColor}15`,
-          boxShadow: `0 4px 12px ${primaryColor}20`,
-        }}
-      >
-        {hasSubcategories ? (
-          <Folder className="h-7 w-7 transition-transform duration-300" style={{ color: primaryColor }} />
-        ) : (
-          <Circle className="h-7 w-7 transition-transform duration-300" style={{ color: primaryColor }} />
-        )}
-      </div>
-
-      <h3 className="text-base font-bold text-card-foreground group-hover:text-primary transition-colors duration-200 leading-tight">
-        {category.name}
-      </h3>
-
-      {(hasSubcategories || hasButtons) && (
-        <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
-          {hasSubcategories && (
-            <span
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-medium"
-              style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-            >
-              <Folder className="h-3 w-3" />
-              {subcategoryCount}
-            </span>
+        {/* Circular button shape - Much larger now */}
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full overflow-hidden border-4 border-white shadow-lg group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-2xl transition-all duration-300 ease-out">
+          {category.icon ? (
+            <Image
+              src={category.icon}
+              alt={category.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 224px"
+            />
+          ) : (
+            /* Gradient fallback using category colors */
+            <div
+              className="w-full h-full"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
+              }}
+            />
           )}
-          {hasButtons && (
-            <span
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-medium"
-              style={{ backgroundColor: `${secondaryColor}15`, color: secondaryColor }}
-            >
-              <Circle className="h-3 w-3" />
-              {buttonCount}
-            </span>
-          )}
+
+          {/* Subtle overlay on hover */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
         </div>
-      )}
+
+        {/* Curved text using SVG - positioned below the circle */}
+        <svg
+          className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[140%] h-16 sm:h-20 overflow-visible pointer-events-none"
+          viewBox="0 0 200 60"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <path
+              id={curveId}
+              d="M 10,10 Q 100,55 190,10"
+              fill="none"
+            />
+          </defs>
+          <text
+            className="fill-gray-800 group-hover:fill-primary transition-colors duration-200"
+            style={{
+              fontSize: '16px',
+              fontWeight: 600,
+            }}
+          >
+            <textPath
+              href={`#${curveId}`}
+              startOffset="50%"
+              textAnchor="middle"
+            >
+              {category.name}
+            </textPath>
+          </text>
+        </svg>
+      </div>
     </Link>
   )
 }

@@ -41,16 +41,16 @@ export const Orders: CollectionConfig = {
     {
       name: 'paymentMethod',
       type: 'select',
-      defaultValue: 'stripe',
       options: [
         { label: 'Stripe', value: 'stripe' },
         { label: 'Cash', value: 'cash' },
         { label: 'Venmo', value: 'venmo' },
+        { label: 'Check', value: 'check' },
         { label: 'Other', value: 'other' },
       ],
       admin: {
-        condition: (data) => data?.orderType === 'custom',
-        description: 'Payment method for custom orders',
+        position: 'sidebar',
+        description: 'How the customer paid',
       },
     },
     {

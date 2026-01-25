@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import type { Button } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { usePricing } from '@/lib/usePricing'
 
 type ButtonCardProps = {
   button: Button
@@ -12,6 +13,7 @@ type ButtonCardProps = {
 }
 
 export default function ButtonCard({ button, onClick, accentColor, featured }: ButtonCardProps) {
+  const { pricing, loading } = usePricing()
   const color = accentColor || '#461D7C'
 
   return (
@@ -56,7 +58,9 @@ export default function ButtonCard({ button, onClick, accentColor, featured }: B
         <h3 className="font-semibold text-card-foreground truncate group-hover:text-primary transition-colors duration-200">
           {button.name}
         </h3>
-        <p style={{ color }} className="font-medium">${button.price.toFixed(2)}</p>
+        <p style={{ color }} className="font-medium">
+          {loading ? '...' : `$${pricing.singlePrice.toFixed(2)}`}
+        </p>
       </div>
     </button>
   )

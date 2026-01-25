@@ -11,6 +11,7 @@ export type Category = {
   featured: boolean
   color_primary: string | null    // Hex color for primary (e.g., "#6B2D5B" for purple)
   color_secondary: string | null  // Hex color for secondary/accent
+  icon: string | null             // URL to icon image displayed as circular button
   background_image: string | null // URL to background image for category page
 }
 
@@ -70,6 +71,7 @@ export type Order = {
   total: number
   items: CartItem[]
   status: 'pending' | 'paid' | 'production' | 'ready' | 'shipped' | 'completed'
+  payment_method?: 'stripe' | 'cash' | 'venmo' | 'check' | 'other' | null
   notes: string | null
   ambassador_code?: string | null  // Optional - add column if using ambassadors
   created_at: string

@@ -328,7 +328,7 @@ function OrderCard({ order }: { order: Order }) {
       </div>
 
       {/* Actions Footer */}
-      {order.status !== 'completed' && order.status !== 'pending' && (
+      {order.status !== 'completed' && (
         <div className="px-4 sm:px-5 py-4 bg-muted/50 border-t border-border/50">
           <OrderActions order={order} />
         </div>

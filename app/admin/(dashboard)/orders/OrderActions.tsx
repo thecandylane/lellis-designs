@@ -2,20 +2,39 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, Truck, Package, Loader2, Edit2, Trash2, X, Save } from 'lucide-react'
+import { CheckCircle, Truck, Package, Loader2, Edit2, Trash2, X, Save, DollarSign, ChevronDown } from 'lucide-react'
 import type { Order } from '@/lib/types'
 
 type OrderActionsProps = {
   order: Order
 }
 
+const ALL_STATUSES = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'production', label: 'Production' },
+  { value: 'ready', label: 'Ready' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'completed', label: 'Completed' },
+]
+
+const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'venmo', label: 'Venmo' },
+  { value: 'check', label: 'Check' },
+  { value: 'other', label: 'Other' },
+]
+
 export default function OrderActions({ order }: OrderActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showTrackingInput, setShowTrackingInput] = useState(false)
   const [showPickupInput, setShowPickupInput] = useState(false)
+  const [showMarkPaidModal, setShowMarkPaidModal] = useState(false)
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const [trackingNumber, setTrackingNumber] = useState('')
   const [pickupAddress, setPickupAddress] = useState(process.env.NEXT_PUBLIC_PICKUP_ADDRESS || '')
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('cash')
   const [error, setError] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -85,6 +104,16 @@ export default function OrderActions({ order }: OrderActionsProps) {
 
   const handleComplete = () => updateStatus('completed')
 
+  const handleMarkPaid = () => {
+    updateStatus('paid', { paymentMethod: selectedPaymentMethod })
+    setShowMarkPaidModal(false)
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    setShowStatusDropdown(false)
+    await updateStatus(newStatus)
+  }
+
   async function handleDelete() {
     setLoading(true)
 
@@ -122,6 +151,13 @@ export default function OrderActions({ order }: OrderActionsProps) {
   // Determine which button to show based on current status
   const getNextAction = () => {
     switch (order.status) {
+      case 'pending':
+        return {
+          label: 'Mark Paid',
+          icon: DollarSign,
+          action: () => setShowMarkPaidModal(true),
+          color: 'bg-green-600 hover:bg-green-700',
+        }
       case 'paid':
         return {
           label: 'Start Making',
@@ -240,8 +276,8 @@ export default function OrderActions({ order }: OrderActionsProps) {
   return (
     <>
       <div className="flex items-center justify-between">
-        {/* Status action button */}
-        <div>
+        {/* Status action button + status dropdown */}
+        <div className="flex items-center gap-2">
           {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
           {nextAction && (
             <button
@@ -257,6 +293,41 @@ export default function OrderActions({ order }: OrderActionsProps) {
               {nextAction.label}
             </button>
           )}
+
+          {/* Status override dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+              className="flex items-center gap-1 px-3 py-2.5 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title="Change status manually"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            {showStatusDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowStatusDropdown(false)}
+                />
+                <div className="absolute left-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                  {ALL_STATUSES.map((s) => (
+                    <button
+                      key={s.value}
+                      onClick={() => handleStatusChange(s.value)}
+                      disabled={s.value === order.status}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                        s.value === order.status
+                          ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Edit/Delete buttons */}
@@ -277,6 +348,69 @@ export default function OrderActions({ order }: OrderActionsProps) {
           </button>
         </div>
       </div>
+
+      {/* Mark Paid Modal */}
+      {showMarkPaidModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Mark as Paid
+              </h3>
+              <button
+                onClick={() => setShowMarkPaidModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                How was payment received?
+              </label>
+              <select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-gray-50 rounded-md p-3 mb-4">
+              <p className="text-sm">
+                <strong>Customer:</strong> {order.customer_name || order.customer_email}
+              </p>
+              <p className="text-sm">
+                <strong>Total:</strong> ${order.total.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowMarkPaidModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkPaid}
+                disabled={loading}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                <DollarSign className="h-4 w-4" />
+                {loading ? 'Updating...' : 'Confirm Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && (

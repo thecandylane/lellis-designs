@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { getRootCategories, getSubcategoryCount, getButtonCount } from '@/lib/categories'
+import { getPayload } from '@/lib/payload'
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import HeroBallpit from '@/components/ui/HeroBallpit'
 import { CustomRequestCTA } from '@/components/ui/CustomRequestCTA'
@@ -43,6 +44,28 @@ export default async function HomePage() {
     console.error('Database initialization pending:', error)
   }
 
+  // Fetch pricing from site settings
+  let pricing = {
+    singlePrice: 5,
+    tier1Price: 4.5,
+    tier1Threshold: 100,
+    tier2Price: 4,
+    tier2Threshold: 200,
+  }
+  try {
+    const payload = await getPayload()
+    const settings = await payload.findGlobal({ slug: 'site-settings' })
+    pricing = {
+      singlePrice: settings.singlePrice ?? 5,
+      tier1Price: settings.tier1Price ?? 4.5,
+      tier1Threshold: settings.tier1Threshold ?? 100,
+      tier2Price: settings.tier2Price ?? 4,
+      tier2Threshold: settings.tier2Threshold ?? 200,
+    }
+  } catch (error) {
+    console.error('Failed to fetch site settings:', error)
+  }
+
   return (
     <main className="min-h-screen bg-glow">
       {/* Hero Section with 3D Ballpit Background */}
@@ -80,7 +103,7 @@ export default async function HomePage() {
               {/* Pricing badges */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-8">
                 <span className="inline-flex items-center border-2 border-primary/30 bg-primary/5 text-primary px-3 py-1.5 rounded-lg text-base font-semibold">
-                  $5 each
+                  ${pricing.singlePrice.toFixed(2)} each
                 </span>
                 <span className="text-muted-foreground text-base font-medium">•</span>
                 <span className="inline-flex items-center border-2 border-secondary/30 bg-secondary/5 text-secondary px-3 py-1.5 rounded-lg text-base font-semibold">
@@ -130,17 +153,17 @@ export default async function HomePage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground text-sm">Bulk Discounts</h3>
-                <p className="text-xs text-muted-foreground">$4.50/ea for 100+, $4/ea for 200+</p>
+                <p className="text-xs text-muted-foreground">${pricing.tier1Price.toFixed(2)}/ea for {pricing.tier1Threshold}+, ${pricing.tier2Price.toFixed(2)}/ea for {pricing.tier2Threshold}+</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
+      {/* Categories - Full width layout */}
       <section id="categories" className="py-8 md:py-12 bg-pattern-geometric scroll-mt-20">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-6">
+        <div className="px-4 md:px-8 lg:px-12">
+          <div className="text-center mb-8 md:mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
               Browse Categories
             </h2>

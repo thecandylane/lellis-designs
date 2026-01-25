@@ -18,10 +18,8 @@ type CartStore = {
   setNeededByDate: (date: string) => void
   setShippingMethod: (method: ShippingMethod) => void
   clearCart: () => void
-  getTotal: () => number
   getTotalQuantity: () => number
   getItemCount: () => number
-  getShippingCost: () => number
 }
 
 // Generate unique key for cart item (same button with different customizations = different items)
@@ -29,31 +27,10 @@ function getItemKey(item: CartItem): string {
   return `${item.buttonId}-${item.personName || ''}-${item.personNumber || ''}-${item.notes || ''}`
 }
 
-// Flat rate shipping cost for UPS
-const UPS_SHIPPING_COST = 8.00
-
-// Pricing tiers
-const PRICING = {
-  base: 5.00,        // Under 100 buttons
-  tier1: 4.50,       // 100-199 buttons
-  tier1Min: 100,
-  tier2: 4.00,       // 200+ buttons
-  tier2Min: 200,
-}
-
-// Calculate price per button based on total quantity
-export function getPricePerButton(quantity: number): number {
-  if (quantity >= PRICING.tier2Min) return PRICING.tier2
-  if (quantity >= PRICING.tier1Min) return PRICING.tier1
-  return PRICING.base
-}
-
-// Get the next discount tier info (for UI messaging)
-export function getNextTierInfo(quantity: number): { threshold: number; price: number } | null {
-  if (quantity >= PRICING.tier2Min) return null // Already at best price
-  if (quantity >= PRICING.tier1Min) return { threshold: PRICING.tier2Min, price: PRICING.tier2 }
-  return { threshold: PRICING.tier1Min, price: PRICING.tier1 }
-}
+// Re-export pricing utilities from usePricing for convenience
+// These functions now require a pricing config parameter
+export { getPricePerButton, getNextTierInfo } from '@/lib/usePricing'
+export type { PricingConfig } from '@/lib/usePricing'
 
 export const useCart = create<CartStore>()(
   persist(
@@ -100,18 +77,6 @@ export const useCart = create<CartStore>()(
       setNeededByDate: (date) => set({ neededByDate: date }),
       setShippingMethod: (method) => set({ shippingMethod: method }),
       clearCart: () => set({ items: [], email: null, neededByDate: null, shippingMethod: 'pickup' }),
-
-      getShippingCost: () => {
-        return get().shippingMethod === 'ups' ? UPS_SHIPPING_COST : 0
-      },
-
-      getTotal: () => {
-        const totalQuantity = get().getTotalQuantity()
-        const pricePerItem = getPricePerButton(totalQuantity)
-        const subtotal = pricePerItem * totalQuantity
-        const shippingCost = get().getShippingCost()
-        return subtotal + shippingCost
-      },
 
       getTotalQuantity: () => {
         return get().items.reduce((sum, item) => sum + item.quantity, 0)
