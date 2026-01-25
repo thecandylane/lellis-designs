@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Trash2, Loader2, Edit2, X, Save } from 'lucide-react'
+import { Eye, EyeOff, Trash2, Loader2, Edit2, X, Save, Star } from 'lucide-react'
 
 type Category = {
   id: string
@@ -12,6 +12,7 @@ type Category = {
 type ButtonActionsProps = {
   buttonId: string
   isActive: boolean
+  isFeatured: boolean
   buttonName: string
   buttonDescription?: string | null
   buttonPrice?: number
@@ -22,6 +23,7 @@ type ButtonActionsProps = {
 export default function ButtonActions({
   buttonId,
   isActive,
+  isFeatured,
   buttonName,
   buttonDescription,
   buttonPrice = 5,
@@ -46,6 +48,24 @@ export default function ButtonActions({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !isActive }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update')
+      router.refresh()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleFeatured = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/admin/buttons/${buttonId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !isFeatured }),
       })
 
       if (!response.ok) throw new Error('Failed to update')
@@ -147,6 +167,18 @@ export default function ButtonActions({
               Show
             </>
           )}
+        </button>
+        <button
+          onClick={toggleFeatured}
+          disabled={loading}
+          className={`p-1.5 rounded-lg transition-colors ${
+            isFeatured
+              ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+              : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50'
+          }`}
+          title={isFeatured ? 'Remove from featured' : 'Add to featured'}
+        >
+          <Star className={`w-4 h-4 ${isFeatured ? 'fill-yellow-500' : ''}`} />
         </button>
         <button
           onClick={() => setShowEdit(true)}

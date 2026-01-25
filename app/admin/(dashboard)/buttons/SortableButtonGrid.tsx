@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -20,8 +20,9 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Loader2, GripVertical } from 'lucide-react'
+import { Loader2, GripVertical, Star, Check } from 'lucide-react'
 import ButtonActions from './ButtonActions'
+import BulkActionToolbar from './BulkActionToolbar'
 
 type PayloadButton = {
   id: string
@@ -31,6 +32,7 @@ type PayloadButton = {
   category?: { id: string; name: string } | string | null
   price: number
   active: boolean
+  featured?: boolean
   sortOrder: number
   createdAt: string
 }
@@ -38,6 +40,7 @@ type PayloadButton = {
 type Category = {
   id: string
   name: string
+  parentId: string | null
 }
 
 type Props = {
@@ -49,6 +52,81 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
   const router = useRouter()
   const [items, setItems] = useState(buttons)
   const [saving, setSaving] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectedParent, setSelectedParent] = useState<string>('all')
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
+
+  // Sync local state when props change (e.g., after router.refresh())
+  useEffect(() => {
+    setItems(buttons)
+  }, [buttons])
+
+  // Parent categories (where parentId is null)
+  const parentCategories = useMemo(() =>
+    categories.filter(c => c.parentId === null),
+    [categories]
+  )
+
+  // Subcategories of selected parent
+  const subcategories = useMemo(() =>
+    selectedParent === 'all'
+      ? []
+      : categories.filter(c => c.parentId === selectedParent),
+    [categories, selectedParent]
+  )
+
+  // Reset subcategory when parent changes
+  useEffect(() => {
+    setSelectedSubcategory('all')
+  }, [selectedParent])
+
+  // Filter items based on selected category
+  const filteredItems = useMemo(() => {
+    if (selectedParent === 'all') {
+      return items
+    }
+
+    // Get all category IDs under selected parent (parent itself + all its children)
+    const childCategoryIds = categories
+      .filter(c => c.parentId === selectedParent)
+      .map(c => c.id)
+    const relevantCategoryIds = [selectedParent, ...childCategoryIds]
+
+    if (selectedSubcategory === 'all') {
+      // Show all buttons in parent and its children
+      return items.filter(item => {
+        const catId = typeof item.category === 'object' ? item.category?.id : item.category
+        return catId && relevantCategoryIds.includes(catId)
+      })
+    }
+
+    // Show only buttons in specific subcategory
+    return items.filter(item => {
+      const catId = typeof item.category === 'object' ? item.category?.id : item.category
+      return catId === selectedSubcategory
+    })
+  }, [items, categories, selectedParent, selectedSubcategory])
+
+  // Selection handlers
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }, [])
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredItems.map(item => item.id)))
+  }, [filteredItems])
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set())
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -96,6 +174,9 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
     }
   }
 
+  const allSelected = filteredItems.length > 0 && selectedIds.size === filteredItems.length
+  const someSelected = selectedIds.size > 0 && selectedIds.size < filteredItems.length
+
   return (
     <div className="relative">
       {saving && (
@@ -104,24 +185,109 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
         </div>
       )}
 
+      {/* Category Filter Dropdowns */}
+      {parentCategories.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {/* Parent Category Dropdown */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-foreground/80">Category:</label>
+            <select
+              value={selectedParent}
+              onChange={(e) => setSelectedParent(e.target.value)}
+              className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="all">All Categories ({items.length})</option>
+              {parentCategories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Subcategory Dropdown - only show when parent is selected and has children */}
+          {selectedParent !== 'all' && subcategories.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-foreground/80">Subcategory:</label>
+              <select
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="all">All in {parentCategories.find(c => c.id === selectedParent)?.name}</option>
+                {subcategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Count display */}
+          {selectedParent !== 'all' && (
+            <span className="text-sm text-muted-foreground">
+              Showing {filteredItems.length} of {items.length} buttons
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Select All Header */}
+      {filteredItems.length > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <button
+            onClick={allSelected ? clearSelection : selectAll}
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              allSelected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : someSelected
+                ? 'bg-primary/50 border-primary text-primary-foreground'
+                : 'border-muted-foreground/30 hover:border-muted-foreground/50'
+            }`}
+          >
+            {(allSelected || someSelected) && <Check className="w-3 h-3" />}
+          </button>
+          <span className="text-sm text-muted-foreground">
+            {selectedIds.size > 0 ? `${selectedIds.size} of ${filteredItems.length} selected` : 'Select all'}
+          </span>
+        </div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={filteredItems.map((i) => i.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {items.map((button) => (
-              <SortableButtonCard key={button.id} button={button} categories={categories} />
+            {filteredItems.map((button) => (
+              <SortableButtonCard
+                key={button.id}
+                button={button}
+                categories={categories}
+                isSelected={selectedIds.has(button.id)}
+                onToggleSelect={() => toggleSelect(button.id)}
+              />
             ))}
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Bulk Action Toolbar */}
+      <BulkActionToolbar
+        selectedIds={Array.from(selectedIds)}
+        onClearSelection={clearSelection}
+        onActionComplete={() => router.refresh()}
+      />
     </div>
   )
 }
 
-function SortableButtonCard({ button, categories }: { button: PayloadButton; categories: Category[] }) {
+type SortableButtonCardProps = {
+  button: PayloadButton
+  categories: Category[]
+  isSelected: boolean
+  onToggleSelect: () => void
+}
+
+function SortableButtonCard({ button, categories, isSelected, onToggleSelect }: SortableButtonCardProps) {
   const {
     attributes,
     listeners,
@@ -144,12 +310,29 @@ function SortableButtonCard({ button, categories }: { button: PayloadButton; cat
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-card rounded-xl shadow-sm border border-border overflow-hidden ${
+      className={`bg-card rounded-xl shadow-sm border overflow-hidden ${
         !button.active ? 'opacity-60' : ''
-      } ${isDragging ? 'shadow-lg ring-2 ring-primary/50' : ''}`}
+      } ${isDragging ? 'shadow-lg ring-2 ring-primary/50' : ''} ${
+        isSelected ? 'ring-2 ring-primary border-primary' : 'border-border'
+      }`}
     >
       {/* Image */}
       <div className="relative aspect-square bg-muted">
+        {/* Selection Checkbox */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          className={`absolute top-2 left-2 z-10 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+            isSelected
+              ? 'bg-primary border-primary text-primary-foreground'
+              : 'bg-background/80 border-muted-foreground/30 hover:border-muted-foreground/50'
+          }`}
+        >
+          {isSelected && <Check className="w-3 h-3" />}
+        </button>
+
         {/* Drag Handle */}
         <button
           {...attributes}
@@ -179,6 +362,12 @@ function SortableButtonCard({ button, categories }: { button: PayloadButton; cat
             Hidden
           </div>
         )}
+        {button.featured && (
+          <div className="absolute bottom-2 left-2 bg-yellow-500/90 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+            <Star className="w-3 h-3 fill-current" />
+            Featured
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -198,6 +387,7 @@ function SortableButtonCard({ button, categories }: { button: PayloadButton; cat
           <ButtonActions
             buttonId={button.id}
             isActive={button.active}
+            isFeatured={button.featured ?? false}
             buttonName={button.name}
             buttonDescription={button.description}
             buttonPrice={button.price}

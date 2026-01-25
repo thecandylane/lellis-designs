@@ -3,7 +3,6 @@ import Link from 'next/link'
 import SortableButtonGrid from './SortableButtonGrid'
 import AddButtonForm from './AddButtonForm'
 import SearchBar from '@/components/admin/SearchBar'
-import CategoryFilter from './CategoryFilter'
 import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
@@ -30,11 +29,10 @@ type PayloadCategory = {
 
 export default async function ButtonsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
-  const categoryFilter = params.category || 'all'
   const searchQuery = params.q || ''
   const payload = await getPayload()
 
-  // Fetch categories for filter
+  // Fetch categories for filter dropdown
   const { docs: categories } = await payload.find({
     collection: 'categories',
     where: { active: { equals: true } },
@@ -42,21 +40,9 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
     limit: 100,
   })
 
-  // Build where clause for buttons
-  const conditions: Where[] = []
-
-  if (categoryFilter !== 'all') {
-    conditions.push({ category: { equals: categoryFilter } })
-  }
-
-  if (searchQuery) {
-    conditions.push({ name: { contains: searchQuery } })
-  }
-
-  const whereClause: Where | undefined = conditions.length > 0
-    ? conditions.length === 1
-      ? conditions[0]
-      : { and: conditions }
+  // Only filter by search query server-side; category filtering is done client-side
+  const whereClause: Where | undefined = searchQuery
+    ? { name: { contains: searchQuery } }
     : undefined
 
   const { docs: buttons, totalDocs } = await payload.find({
@@ -66,9 +52,6 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
     limit: 200,
     depth: 1, // Include category relation
   })
-
-  // Build category tree for dropdown
-  const categoryTree = buildCategoryTree(categories as PayloadCategory[])
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -94,9 +77,6 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
         </div>
       </div>
 
-      {/* Category Filter */}
-      <CategoryFilter categories={categoryTree.map(c => ({ id: c.id, name: c.name }))} />
-
       {/* Buttons Grid */}
       {buttons.length === 0 ? (
         <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
@@ -120,39 +100,14 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
       ) : (
         <SortableButtonGrid
           buttons={buttons as PayloadButton[]}
-          categories={(categories as PayloadCategory[]).map(c => ({ id: c.id, name: c.name }))}
+          categories={(categories as PayloadCategory[]).map(c => ({
+            id: c.id,
+            name: c.name,
+            parentId: typeof c.parent === 'object' ? (c.parent?.id ?? null) : (c.parent ?? null)
+          }))}
         />
       )}
     </div>
   )
-}
-
-type CategoryNode = {
-  id: string
-  name: string
-  children: CategoryNode[]
-}
-
-function buildCategoryTree(categories: PayloadCategory[]): CategoryNode[] {
-  const map = new Map<string, CategoryNode>()
-  const roots: CategoryNode[] = []
-
-  // Create nodes
-  for (const cat of categories) {
-    map.set(cat.id, { id: cat.id, name: cat.name, children: [] })
-  }
-
-  // Build tree
-  for (const cat of categories) {
-    const node = map.get(cat.id)!
-    const parentId = typeof cat.parent === 'object' ? cat.parent?.id : cat.parent
-    if (parentId && map.has(parentId)) {
-      map.get(parentId)!.children.push(node)
-    } else {
-      roots.push(node)
-    }
-  }
-
-  return roots
 }
 
