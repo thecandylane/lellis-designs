@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 
@@ -15,10 +15,14 @@ export default function SearchBar({ placeholder = 'Search...', paramName = 'q' }
   const searchParams = useSearchParams()
   const [value, setValue] = useState(searchParams.get(paramName) || '')
 
+  // Use a ref for searchParams to avoid recreating the callback on every URL change
+  const searchParamsRef = useRef(searchParams)
+  searchParamsRef.current = searchParams
+
   // Update URL with debounced search
   const updateSearch = useCallback(
     (query: string) => {
-      const params = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(searchParamsRef.current.toString())
       if (query) {
         params.set(paramName, query)
       } else {
@@ -26,7 +30,7 @@ export default function SearchBar({ placeholder = 'Search...', paramName = 'q' }
       }
       router.push(`${pathname}?${params.toString()}`)
     },
-    [pathname, searchParams, router, paramName]
+    [pathname, router, paramName]
   )
 
   // Debounce the search
@@ -40,7 +44,7 @@ export default function SearchBar({ placeholder = 'Search...', paramName = 'q' }
 
   const handleClear = () => {
     setValue('')
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParamsRef.current.toString())
     params.delete(paramName)
     router.push(`${pathname}?${params.toString()}`)
   }

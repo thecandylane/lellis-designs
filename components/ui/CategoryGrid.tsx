@@ -20,7 +20,6 @@ export default function CategoryGrid({
   categories,
   className,
   emptyMessage = "No categories found",
-  accentColor
 }: CategoryGridProps) {
   if (categories.length === 0) {
     return (
@@ -30,15 +29,11 @@ export default function CategoryGrid({
     )
   }
 
-  // Determine grid columns based on number of items
-  const gridClass = categories.length <= 2
-    ? "grid grid-cols-2 max-w-lg mx-auto gap-4"
-    : categories.length <= 4
-    ? "grid grid-cols-2 md:grid-cols-4 gap-4"
-    : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-
   return (
-    <div className={cn(gridClass, className)}>
+    <div className={cn(
+      "w-full flex flex-wrap justify-center lg:justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-8",
+      className
+    )}>
       {categories.map(({ category, href, subcategoryCount, buttonCount }) => (
         <CategoryCard
           key={category.id}
@@ -46,7 +41,6 @@ export default function CategoryGrid({
           href={href}
           subcategoryCount={subcategoryCount}
           buttonCount={buttonCount}
-          accentColor={accentColor || category.color_primary || undefined}
         />
       ))}
     </div>

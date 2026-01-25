@@ -16,6 +16,7 @@ type StatusUpdateRequest = {
   trackingNumber?: string
   pickupAddress?: string
   pickupInstructions?: string
+  paymentMethod?: 'stripe' | 'cash' | 'venmo' | 'check' | 'other'
 }
 
 async function handleStatusUpdate(
@@ -31,7 +32,7 @@ async function handleStatusUpdate(
 
   const { id } = await params
   const body: StatusUpdateRequest = await request.json()
-  const { status, trackingNumber, pickupAddress, pickupInstructions } = body
+  const { status, trackingNumber, pickupAddress, pickupInstructions, paymentMethod } = body
 
   if (!status || !validStatuses.includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
@@ -75,6 +76,7 @@ async function handleStatusUpdate(
       data: {
         status: status as 'pending' | 'paid' | 'production' | 'ready' | 'shipped' | 'completed',
         ...(trackingNumber && { trackingNumber }),
+        ...(paymentMethod && { paymentMethod }),
       },
     })
 

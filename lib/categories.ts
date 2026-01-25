@@ -15,6 +15,7 @@ type PayloadCategory = {
   featured?: boolean | null
   colorPrimary?: string | null
   colorSecondary?: string | null
+  icon?: { url?: string | null } | string | null
   backgroundImage?: { url?: string | null } | string | null
 }
 
@@ -36,6 +37,9 @@ function toCategory(doc: PayloadCategory): Category {
     featured: doc.featured ?? false,
     color_primary: doc.colorPrimary || null,
     color_secondary: doc.colorSecondary || null,
+    icon: typeof doc.icon === 'object'
+      ? doc.icon?.url || null
+      : null,
     background_image: typeof doc.backgroundImage === 'object'
       ? doc.backgroundImage?.url || null
       : null,

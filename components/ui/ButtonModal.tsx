@@ -6,6 +6,7 @@ import { X, Minus, Plus } from 'lucide-react'
 import type { Button } from '@/lib/types'
 import { useCart } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { usePricing } from '@/lib/usePricing'
 
 type ButtonModalProps = {
   button: Button
@@ -19,6 +20,7 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
   const [personNumber, setPersonNumber] = useState('')
   const [notes, setNotes] = useState('')
   const addItem = useCart((state) => state.addItem)
+  const { pricing, loading } = usePricing()
 
   const color = accentColor || '#461D7C'
   const isCustomizable = button.customization === 'customizable'
@@ -81,7 +83,7 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
             <p className="text-muted-foreground mb-4">{button.description}</p>
           )}
           <p className="text-xl font-semibold mb-6" style={{ color }}>
-            ${button.price.toFixed(2)} each
+            {loading ? '...' : `$${pricing.singlePrice.toFixed(2)}`} each
           </p>
 
           <div className="space-y-4">

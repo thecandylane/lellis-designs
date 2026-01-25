@@ -16,6 +16,7 @@ type PayloadCategory = {
   parent?: { id: string; name: string } | string | null
   colorPrimary?: string | null
   colorSecondary?: string | null
+  icon?: { url: string } | string | null
   active: boolean
   sortOrder: number
 }
@@ -96,6 +97,9 @@ type CategoryNode = {
   active: boolean
   buttonCount: number
   sortOrder: number
+  iconUrl?: string | null
+  colorPrimary?: string | null
+  colorSecondary?: string | null
   children: CategoryNode[]
 }
 
@@ -108,6 +112,9 @@ function buildTree(
 
   // Create nodes
   for (const cat of categories) {
+    // Extract icon URL from populated or string value
+    const iconUrl = typeof cat.icon === 'object' ? cat.icon?.url : null
+
     map.set(cat.id, {
       id: cat.id,
       name: cat.name,
@@ -116,6 +123,9 @@ function buildTree(
       active: cat.active,
       buttonCount: counts.get(cat.id) || 0,
       sortOrder: cat.sortOrder,
+      iconUrl,
+      colorPrimary: cat.colorPrimary,
+      colorSecondary: cat.colorSecondary,
       children: [],
     })
   }

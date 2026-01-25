@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useCart, getPricePerButton, getNextTierInfo } from '@/lib/store'
+import { useCart } from '@/lib/store'
+import { usePricing, getPricePerButton, getNextTierInfo } from '@/lib/usePricing'
 import CartItem from '@/components/cart/CartItem'
 import { Truck, MapPin, ShoppingBag, ArrowLeft } from 'lucide-react'
 
@@ -14,20 +15,20 @@ export default function CartPage() {
   const setEmail = useCart((state) => state.setEmail)
   const setNeededByDate = useCart((state) => state.setNeededByDate)
   const setShippingMethod = useCart((state) => state.setShippingMethod)
-  const getTotal = useCart((state) => state.getTotal)
   const getTotalQuantity = useCart((state) => state.getTotalQuantity)
-  const getShippingCost = useCart((state) => state.getShippingCost)
+
+  const { pricing, loading: pricingLoading } = usePricing()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const totalQuantity = getTotalQuantity()
-  const pricePerItem = getPricePerButton(totalQuantity)
+  const pricePerItem = getPricePerButton(totalQuantity, pricing)
   const subtotal = totalQuantity * pricePerItem
-  const shippingCost = getShippingCost()
-  const total = getTotal()
-  const nextTier = getNextTierInfo(totalQuantity)
-  const basePricePerItem = 5 // For calculating savings
+  const shippingCost = shippingMethod === 'ups' ? pricing.shippingCost : 0
+  const total = subtotal + shippingCost
+  const nextTier = getNextTierInfo(totalQuantity, pricing)
+  const basePricePerItem = pricing.singlePrice // For calculating savings
 
   const handleCheckout = async () => {
     if (!email) {
@@ -183,7 +184,9 @@ export default function CartPage() {
                   <p className={`font-medium ${shippingMethod === 'ups' ? 'text-primary' : 'text-foreground'}`}>
                     UPS Shipping
                   </p>
-                  <p className="text-sm text-muted-foreground">$8.00 flat rate</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pricingLoading ? '...' : `$${pricing.shippingCost.toFixed(2)}`} flat rate
+                  </p>
                 </div>
               </button>
             </div>

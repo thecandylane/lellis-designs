@@ -97,6 +97,14 @@ export const Categories: CollectionConfig = {
       },
     },
     {
+      name: 'icon',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        description: 'Square image displayed as a circular button on homepage (recommended: 400x400px)',
+      },
+    },
+    {
       name: 'backgroundImage',
       type: 'upload',
       relationTo: 'media',
