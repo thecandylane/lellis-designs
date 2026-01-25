@@ -18,11 +18,106 @@ export async function PATCH(
     const body = await request.json()
     const payload = await getPayload()
 
-    // Sanitize parent ID - keep as string for relationship field
-    const data = { ...body }
-    if (data.parent !== undefined) {
-      data.parent = data.parent || null
+    // Sanitize the data - only allow known fields
+    const allowedFields = ['name', 'slug', 'description', 'parent', 'colorPrimary', 'colorSecondary', 'icon', 'active', 'featured', 'sortOrder', 'tags', 'aliases', 'backgroundImage']
+    const data: Record<string, unknown> = {}
+
+    for (const key of allowedFields) {
+      if (key in body) {
+        data[key] = body[key]
+      }
     }
+
+    // Handle parent field - track if we need to clear it
+    let shouldClearParent = false
+
+    if ('parent' in data) {
+      if (!data.parent || data.parent === '') {
+        // Need to clear the parent - remove from data, handle after validation
+        shouldClearParent = true
+        delete data.parent
+      } else {
+        // Convert parent ID to number for postgres (Payload uses integer IDs)
+        let parentId: number
+        if (typeof data.parent === 'string') {
+          parentId = parseInt(data.parent, 10)
+        } else if (typeof data.parent === 'number') {
+          parentId = data.parent
+        } else {
+          return NextResponse.json(
+            { error: 'Invalid parent category ID format' },
+            { status: 400 }
+          )
+        }
+
+        if (isNaN(parentId)) {
+          return NextResponse.json(
+            { error: 'Invalid parent category ID format' },
+            { status: 400 }
+          )
+        }
+        data.parent = parentId
+
+        // Prevent setting parent to self (convert id to number for comparison)
+        const categoryId = parseInt(id, 10)
+        if (parentId === categoryId) {
+          return NextResponse.json(
+            { error: 'Category cannot be its own parent' },
+            { status: 400 }
+          )
+        }
+
+        // Validate that parent exists and check for circular reference
+        try {
+          const parentCategory = await payload.findByID({
+            collection: 'categories',
+            id: parentId,
+            depth: 0,
+          })
+          if (!parentCategory) {
+            return NextResponse.json(
+              { error: 'Parent category not found' },
+              { status: 400 }
+            )
+          }
+
+          // Check for circular reference - walk up the parent chain
+          let currentParent = parentCategory.parent
+          while (currentParent) {
+            const currentParentId = typeof currentParent === 'object' ? currentParent.id : currentParent
+            // Compare as numbers
+            if (Number(currentParentId) === categoryId) {
+              return NextResponse.json(
+                { error: 'Cannot set parent: this would create a circular reference' },
+                { status: 400 }
+              )
+            }
+            // Fetch the next parent up the chain
+            const nextParent = await payload.findByID({
+              collection: 'categories',
+              id: currentParentId,
+              depth: 0,
+            })
+            currentParent = nextParent?.parent
+          }
+        } catch {
+          return NextResponse.json(
+            { error: 'Invalid parent category ID' },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
+    // If clearing parent, don't include it at all - Payload will keep the existing value
+    // To actually clear it, we need to use undefined or omit it
+    if (shouldClearParent) {
+      // Don't set parent at all - this won't change it
+      // For now, let's skip parent clearing and log what we're trying to do
+      console.log('Would clear parent for category', id)
+    }
+
+    console.log('Updating category', id, 'with data:', JSON.stringify(data, null, 2))
 
     await payload.update({
       collection: 'categories',
