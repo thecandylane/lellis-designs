@@ -66,6 +66,7 @@ async function getStats() {
     weekOrdersResult,
     allOrdersResult,
     newRequestsResult,
+    unreadContactsResult,
   ] = await Promise.all([
     // "paid" orders are ones that need to be fulfilled
     payload.count({
@@ -85,6 +86,10 @@ async function getStats() {
       collection: 'custom-requests',
       where: { status: { equals: 'new' } },
     }),
+    payload.count({
+      collection: 'contact-requests',
+      where: { status: { equals: 'new' } },
+    }),
   ])
 
   const weekRevenue = weekOrdersResult.docs.reduce((sum, o) => sum + ((o as PayloadOrder).total || 0), 0)
@@ -96,6 +101,7 @@ async function getStats() {
     weekRevenue,
     totalRevenue,
     newRequests: newRequestsResult.totalDocs || 0,
+    unreadContacts: unreadContactsResult.totalDocs || 0,
   }
 }
 
@@ -124,11 +130,12 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           label="Orders to Fulfill"
           value={stats.newOrders}
           sublabel="Paid, awaiting production"
+          highlight={stats.newOrders > 0}
         />
         <StatCard
           label="Orders This Week"
@@ -144,6 +151,13 @@ export default async function AdminDashboardPage() {
           label="Custom Requests"
           value={stats.newRequests}
           sublabel="New inquiries"
+          highlight={stats.newRequests > 0}
+        />
+        <StatCard
+          label="Contact Messages"
+          value={stats.unreadContacts}
+          sublabel="Unread"
+          highlight={stats.unreadContacts > 0}
         />
       </div>
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
-import { sendReadyForPickup, sendShippedNotification } from '@/lib/email'
+import { sendReadyForPickup, sendShippedNotification, sendProductionStartedEmail, sendOrderCompletedEmail } from '@/lib/email'
 import { createAuditLogger } from '@/lib/audit'
 
 type Params = Promise<{ id: string }>
@@ -93,7 +93,18 @@ async function handleStatusUpdate(
 
   // Send appropriate emails based on status change
   try {
-    if (status === 'ready' && order.shippingMethod === 'pickup') {
+    if (status === 'production') {
+      // Calculate item count from order items
+      const items = order.items as Array<{ quantity: number }>
+      const itemCount = items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+
+      await sendProductionStartedEmail({
+        orderId: String(order.id),
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
+        itemCount,
+      })
+    } else if (status === 'ready' && order.shippingMethod === 'pickup') {
       // Send pickup ready email with address
       await sendReadyForPickup({
         orderId: String(order.id),
@@ -107,6 +118,13 @@ async function handleStatusUpdate(
         orderId: String(order.id),
         customerEmail: order.customerEmail,
         trackingNumber,
+      })
+    } else if (status === 'completed') {
+      // Send thank you email
+      await sendOrderCompletedEmail({
+        orderId: String(order.id),
+        customerEmail: order.customerEmail,
+        customerName: order.customerName,
       })
     }
   } catch (emailError) {

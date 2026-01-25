@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -11,8 +11,15 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  SheetClose,
 } from '@/components/ui/sheet'
+
+type SidebarStats = {
+  orders: { active: number }
+  requests: { pending: number }
+  buttons: { active: number; featured: number }
+  categories: { active: number }
+  contacts: { unread: number }
+} | null
 
 const navItems = [
   {
@@ -54,8 +61,25 @@ const navItems = [
 ]
 
 // Reusable sidebar content component
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, stats }: { onNavigate?: () => void; stats: SidebarStats }) {
   const pathname = usePathname()
+
+  // Get badge count for each nav item
+  const getBadge = (href: string): number | null => {
+    if (!stats) return null
+    switch (href) {
+      case '/admin/orders':
+        return stats.orders.active > 0 ? stats.orders.active : null
+      case '/admin/requests':
+        return stats.requests.pending > 0 ? stats.requests.pending : null
+      case '/admin/buttons':
+        return stats.buttons.active > 0 ? stats.buttons.active : null
+      case '/admin/categories':
+        return stats.categories.active > 0 ? stats.categories.active : null
+      default:
+        return null
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -87,6 +111,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           {navItems.map((item) => {
             const isActive = pathname === item.href ||
               (item.href !== '/admin/orders' && pathname.startsWith(item.href))
+            const badge = getBadge(item.href)
 
             return (
               <li key={item.href}>
@@ -100,12 +125,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   }`}
                 >
                   <item.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                  <div>
+                  <div className="flex-1">
                     <span className="block">{item.label}</span>
                     <span className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground/70'}`}>
                       {item.description}
                     </span>
                   </div>
+                  {badge !== null && (
+                    <span className={`min-w-[20px] h-5 px-1.5 rounded-full text-xs font-medium flex items-center justify-center ${
+                      item.href === '/admin/orders' || item.href === '/admin/requests'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             )
@@ -131,11 +165,41 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+// Hook to fetch sidebar stats
+function useSidebarStats(): SidebarStats {
+  const [stats, setStats] = useState<SidebarStats>(null)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/stats')
+        if (response.ok) {
+          const data = await response.json()
+          setStats(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch sidebar stats:', error)
+      }
+    }
+
+    fetchStats()
+
+    // Refetch on navigation
+    const interval = setInterval(fetchStats, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
+  }, [pathname])
+
+  return stats
+}
+
 // Desktop sidebar - hidden on mobile
 export default function Sidebar() {
+  const stats = useSidebarStats()
+
   return (
     <aside className="hidden md:flex w-64 bg-card border-r border-border min-h-screen flex-col">
-      <SidebarContent />
+      <SidebarContent stats={stats} />
     </aside>
   )
 }
@@ -143,6 +207,7 @@ export default function Sidebar() {
 // Mobile sidebar trigger component for use in AdminHeader
 export function MobileSidebarTrigger() {
   const [open, setOpen] = useState(false)
+  const stats = useSidebarStats()
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -158,7 +223,7 @@ export function MobileSidebarTrigger() {
         <SheetHeader className="sr-only">
           <SheetTitle>Admin Navigation</SheetTitle>
         </SheetHeader>
-        <SidebarContent onNavigate={() => setOpen(false)} />
+        <SidebarContent onNavigate={() => setOpen(false)} stats={stats} />
       </SheetContent>
     </Sheet>
   )
