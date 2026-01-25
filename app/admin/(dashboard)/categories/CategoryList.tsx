@@ -294,6 +294,7 @@ function CategoryRow({
   const [editColorPrimary, setEditColorPrimary] = useState(category.colorPrimary || '')
   const [editColorSecondary, setEditColorSecondary] = useState(category.colorSecondary || '')
   const [previewIcon, setPreviewIcon] = useState<string | null>(category.iconUrl || null)
+  const [editIconId, setEditIconId] = useState<string | null>(null) // Media ID for the icon
   const [editParent, setEditParent] = useState<string | null>(parentId)
 
   const hasChildren = category.children.length > 0
@@ -349,6 +350,7 @@ function CategoryRow({
 
       const data = await response.json()
       setPreviewIcon(data.url)
+      setEditIconId(data.id)
     } catch (err) {
       console.error('Upload failed:', err)
       alert('Failed to upload image')
@@ -360,17 +362,27 @@ function CategoryRow({
   const handleSaveEdit = async () => {
     setLoading(true)
     try {
+      // Build update data - only include fields that have values
+      const updateData: Record<string, unknown> = {
+        name: editName,
+        description: editDescription || null,
+        colorPrimary: editColorPrimary || null,
+        colorSecondary: editColorSecondary || null,
+        parent: editParent,
+      }
+
+      // Only include icon if a new one was uploaded
+      if (editIconId) {
+        updateData.icon = editIconId
+      } else if (previewIcon === null && category.iconUrl) {
+        // Icon was removed
+        updateData.icon = null
+      }
+
       const response = await fetch(`/api/admin/categories/${category.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editName,
-          description: editDescription || null,
-          colorPrimary: editColorPrimary || null,
-          colorSecondary: editColorSecondary || null,
-          iconUrl: previewIcon,
-          parent: editParent,
-        }),
+        body: JSON.stringify(updateData),
       })
       if (!response.ok) throw new Error('Failed')
       router.refresh()
@@ -389,6 +401,7 @@ function CategoryRow({
     setEditColorPrimary(category.colorPrimary || '')
     setEditColorSecondary(category.colorSecondary || '')
     setPreviewIcon(category.iconUrl || null)
+    setEditIconId(null) // Reset - only set when a new icon is uploaded
     setEditParent(parentId)
     setShowEdit(true)
   }
@@ -595,7 +608,10 @@ function CategoryRow({
                     <p className="text-xs text-gray-500 mt-1">Recommended: 400x400px square image</p>
                     {previewIcon && (
                       <button
-                        onClick={() => setPreviewIcon(null)}
+                        onClick={() => {
+                          setPreviewIcon(null)
+                          setEditIconId(null)
+                        }}
                         className="text-xs text-red-600 hover:text-red-700 mt-1"
                       >
                         Remove icon
