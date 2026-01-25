@@ -6,8 +6,9 @@ import CategoryGrid from '@/components/ui/CategoryGrid'
 import HeroBallpit from '@/components/ui/HeroBallpit'
 import { CustomRequestCTA } from '@/components/ui/CustomRequestCTA'
 import ShopNowButton from '@/components/ui/ShopNowButton'
+import HomeButtonShowcase from '@/components/ui/HomeButtonShowcase'
 import { ShoppingBag, Truck, Heart } from 'lucide-react'
-import type { Category } from '@/lib/types'
+import type { Category, Button } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,9 +21,11 @@ type CategoryWithCounts = {
 
 export default async function HomePage() {
   let categoriesWithCounts: CategoryWithCounts[] = []
+  let rootCategories: Category[] = []
+  let allButtons: Button[] = []
 
   try {
-    const rootCategories = await getRootCategories()
+    rootCategories = await getRootCategories()
 
     // Get counts for each root category
     categoriesWithCounts = await Promise.all(
@@ -42,6 +45,36 @@ export default async function HomePage() {
   } catch (error) {
     // Database not initialized yet - show empty state
     console.error('Database initialization pending:', error)
+  }
+
+  // Fetch all active buttons for the showcase
+  try {
+    const payload = await getPayload()
+    const { docs: buttons } = await payload.find({
+      collection: 'buttons',
+      where: { active: { equals: true } },
+      sort: 'sortOrder',
+      limit: 100,
+      depth: 1,
+    })
+
+    // Map Payload buttons to our Button type
+    allButtons = buttons.map((b) => ({
+      id: String(b.id),
+      category_id: typeof b.category === 'object' && b.category ? String(b.category.id) : (b.category ? String(b.category) : null),
+      name: b.name,
+      description: b.description || null,
+      tags: null,
+      image_url: typeof b.image === 'object' && b.image?.url ? b.image.url : '/placeholder.png',
+      price: b.price,
+      lead_time_days: 0,
+      customization: 'as_is' as const,
+      active: b.active,
+      featured: b.featured ?? false,
+      sku: null,
+    }))
+  } catch (error) {
+    console.error('Failed to fetch buttons:', error)
   }
 
   // Fetch pricing from site settings
@@ -159,6 +192,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured Button Showcase */}
+      {allButtons.filter(b => b.featured).length > 0 && (
+        <HomeButtonShowcase buttons={allButtons.filter(b => b.featured)} />
+      )}
 
       {/* Categories - Full width layout */}
       <section id="categories" className="py-8 md:py-12 bg-pattern-geometric scroll-mt-20">

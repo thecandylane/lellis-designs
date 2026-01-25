@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   DndContext,
@@ -81,6 +81,11 @@ export default function CategoryList({ categories }: { categories: CategoryNode[
   const router = useRouter()
   const [items, setItems] = useState(categories)
   const [saving, setSaving] = useState(false)
+
+  // Sync local state when props change (e.g., after router.refresh())
+  useEffect(() => {
+    setItems(categories)
+  }, [categories])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

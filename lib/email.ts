@@ -611,6 +611,106 @@ export async function sendQuoteNotification(data: {
   })
 }
 
+// Email to customer when order status changes to production
+export async function sendProductionStartedEmail(data: {
+  orderId: string
+  customerEmail: string
+  customerName?: string | null
+  itemCount: number
+}) {
+  const { orderId, customerEmail, customerName, itemCount } = data
+  const firstName = customerName?.split(' ')[0] || 'there'
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 32px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">We're Making Your Buttons!</h1>
+      </div>
+
+      <div style="padding: 32px; background: #fff;">
+        <p style="font-size: 16px; color: #333;">
+          Hi ${firstName}! Great news - we've started working on your custom buttons.
+        </p>
+
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">Your Order</p>
+          <p style="margin: 0; font-size: 24px; font-weight: bold; color: #2563eb;">${itemCount} button${itemCount !== 1 ? 's' : ''}</p>
+          <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;">Order #${orderId.slice(0, 8).toUpperCase()}</p>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">
+          We'll send you another email when your order is ready${' '}for pickup or shipping!
+        </p>
+      </div>
+
+      <div style="background: #333; padding: 24px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 14px;">
+          L. Ellis Designs - Custom 3" Buttons - Louisiana
+        </p>
+      </div>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: `We're Making Your Buttons! - Order ${orderId.slice(0, 8).toUpperCase()}`,
+    html,
+  })
+}
+
+// Email to customer when order is completed
+export async function sendOrderCompletedEmail(data: {
+  orderId: string
+  customerEmail: string
+  customerName?: string | null
+}) {
+  const { orderId, customerEmail, customerName } = data
+  const firstName = customerName?.split(' ')[0] || 'there'
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 32px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">Thanks for Your Order!</h1>
+      </div>
+
+      <div style="padding: 32px; background: #fff;">
+        <p style="font-size: 16px; color: #333;">
+          Hi ${firstName}! We hope you love your custom buttons!
+        </p>
+
+        <div style="background: #f0fdf4; border: 1px solid #22c55e; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
+          <p style="margin: 0; font-size: 18px; color: #16a34a; font-weight: bold;">Order Complete</p>
+          <p style="margin: 8px 0 0 0; font-size: 14px; color: #666;">Order #${orderId.slice(0, 8).toUpperCase()}</p>
+        </div>
+
+        <p style="color: #333; font-size: 14px;">
+          Thank you for choosing L. Ellis Designs! We'd love to hear about your event or see photos of your buttons in action.
+        </p>
+
+        <p style="color: #666; font-size: 14px; margin-top: 24px;">
+          Need more buttons for your next event? We're here to help! Just reply to this email or visit our website.
+        </p>
+      </div>
+
+      <div style="background: #333; padding: 24px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 14px;">
+          L. Ellis Designs - Custom 3" Buttons - Louisiana
+        </p>
+      </div>
+    </div>
+  `
+
+  const resend = getResend()
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to: customerEmail,
+    subject: `Thanks for Your Order! - ${orderId.slice(0, 8).toUpperCase()}`,
+    html,
+  })
+}
+
 // Email to admin when new custom request comes in
 export async function sendAdminCustomRequestNotification(data: {
   requestId: string
