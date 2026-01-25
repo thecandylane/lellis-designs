@@ -143,7 +143,6 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
         <SortableButtonGrid
           buttons={buttons as PayloadButton[]}
           categories={(categories as PayloadCategory[]).map(c => ({ id: c.id, name: c.name }))}
-          rootCategories={categoryTree.map(c => ({ id: c.id, name: c.name }))}
         />
       )}
     </div>
