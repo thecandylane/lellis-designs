@@ -133,19 +133,32 @@ export default function SortableButtonGrid({ buttons, categories = [], rootCateg
             />
           </div>
 
-          {/* Category Dropdown */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background min-w-[160px]"
-          >
-            <option value="all">All Categories</option>
+          {/* Category Filter Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3 py-2 rounded-lg text-sm transition-all whitespace-nowrap ${
+                selectedCategory === 'all'
+                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background font-medium shadow-sm'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              All
+            </button>
             {rootCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-2 rounded-lg text-sm transition-all whitespace-nowrap ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background font-medium shadow-sm'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
                 {cat.name}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
 
           {/* Clear Filters */}
           {hasActiveFilters && (
