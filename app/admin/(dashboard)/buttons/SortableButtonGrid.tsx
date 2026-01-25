@@ -69,10 +69,19 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
 
   // Subcategories of selected parent
   const subcategories = useMemo(() =>
-    selectedParent === 'all'
+    selectedParent === 'all' || selectedParent === 'uncategorized'
       ? []
       : categories.filter(c => c.parentId === selectedParent),
     [categories, selectedParent]
+  )
+
+  // Count of uncategorized buttons
+  const uncategorizedCount = useMemo(() =>
+    items.filter(item => {
+      const catId = typeof item.category === 'object' ? item.category?.id : item.category
+      return !catId
+    }).length,
+    [items]
   )
 
   // Reset subcategory when parent changes
@@ -84,6 +93,14 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
   const filteredItems = useMemo(() => {
     if (selectedParent === 'all') {
       return items
+    }
+
+    // Handle uncategorized filter
+    if (selectedParent === 'uncategorized') {
+      return items.filter(item => {
+        const catId = typeof item.category === 'object' ? item.category?.id : item.category
+        return !catId
+      })
     }
 
     // Get all category IDs under selected parent (parent itself + all its children)
@@ -186,7 +203,7 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
       )}
 
       {/* Category Filter Dropdowns */}
-      {parentCategories.length > 0 && (
+      {(parentCategories.length > 0 || uncategorizedCount > 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {/* Parent Category Dropdown */}
           <div className="flex items-center gap-2">
@@ -197,6 +214,9 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
               className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="all">All Categories ({items.length})</option>
+              {uncategorizedCount > 0 && (
+                <option value="uncategorized">Uncategorized ({uncategorizedCount})</option>
+              )}
               {parentCategories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
@@ -204,7 +224,7 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
           </div>
 
           {/* Subcategory Dropdown - only show when parent is selected and has children */}
-          {selectedParent !== 'all' && subcategories.length > 0 && (
+          {selectedParent !== 'all' && selectedParent !== 'uncategorized' && subcategories.length > 0 && (
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-foreground/80">Subcategory:</label>
               <select
@@ -275,6 +295,7 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
         selectedIds={Array.from(selectedIds)}
         onClearSelection={clearSelection}
         onActionComplete={() => router.refresh()}
+        categories={categories}
       />
     </div>
   )
