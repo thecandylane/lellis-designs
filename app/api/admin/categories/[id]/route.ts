@@ -100,7 +100,8 @@ export async function PATCH(
             })
             currentParent = nextParent?.parent
           }
-        } catch {
+        } catch (err) {
+          console.error('Parent validation error:', err)
           return NextResponse.json(
             { error: 'Invalid parent category ID' },
             { status: 400 }
@@ -109,15 +110,10 @@ export async function PATCH(
       }
     }
 
-    // If clearing parent, don't include it at all - Payload will keep the existing value
-    // To actually clear it, we need to use undefined or omit it
+    // If clearing parent, set it to null explicitly
     if (shouldClearParent) {
-      // Don't set parent at all - this won't change it
-      // For now, let's skip parent clearing and log what we're trying to do
-      console.log('Would clear parent for category', id)
+      data.parent = null
     }
-
-    console.log('Updating category', id, 'with data:', JSON.stringify(data, null, 2))
 
     await payload.update({
       collection: 'categories',

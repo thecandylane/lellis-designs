@@ -21,12 +21,27 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload()
 
-    // Validate parent exists if provided
+    // Convert and validate parent ID if provided
+    let parentId: number | null = null
     if (parent) {
+      // Convert to number for Postgres
+      if (typeof parent === 'string') {
+        parentId = parseInt(parent, 10)
+      } else if (typeof parent === 'number') {
+        parentId = parent
+      }
+
+      if (parentId === null || isNaN(parentId)) {
+        return NextResponse.json(
+          { error: 'Invalid parent category ID format' },
+          { status: 400 }
+        )
+      }
+
       try {
         const parentCategory = await payload.findByID({
           collection: 'categories',
-          id: parent,
+          id: parentId,
         })
         if (!parentCategory) {
           return NextResponse.json(
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: name.trim(),
         slug,
-        parent: parent || null,
+        parent: parentId,
         active: true,
         sortOrder: 0,
       },
