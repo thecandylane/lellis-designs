@@ -102,7 +102,7 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
               href="/admin/buttons"
               className={`px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap min-h-[36px] flex items-center ${
                 categoryFilter === 'all'
-                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 font-medium'
+                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background font-medium shadow-sm'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
@@ -193,7 +193,7 @@ function CategoryFilterLink({
       href={`/admin/buttons?category=${category.id}`}
       className={`px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap min-h-[36px] flex items-center ${
         isActive
-          ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 font-medium'
+          ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background font-medium shadow-sm'
           : 'bg-muted text-muted-foreground hover:bg-muted/80'
       }`}
     >
