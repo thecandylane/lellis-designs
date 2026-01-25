@@ -113,7 +113,6 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
                 key={cat.id}
                 category={cat}
                 currentFilter={categoryFilter}
-                depth={0}
               />
             ))}
           </div>
@@ -144,6 +143,7 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
         <SortableButtonGrid
           buttons={buttons as PayloadButton[]}
           categories={(categories as PayloadCategory[]).map(c => ({ id: c.id, name: c.name }))}
+          rootCategories={categoryTree.map(c => ({ id: c.id, name: c.name }))}
         />
       )}
     </div>
@@ -182,43 +182,22 @@ function buildCategoryTree(categories: PayloadCategory[]): CategoryNode[] {
 function CategoryFilterLink({
   category,
   currentFilter,
-  depth,
-  parentName,
 }: {
   category: CategoryNode
   currentFilter: string
-  depth: number
-  parentName?: string
 }) {
   const isActive = currentFilter === category.id
 
-  // For depth >= 2, show "Parent > Category" to distinguish nested categories
-  const displayName = depth >= 2 && parentName
-    ? `${parentName} > ${category.name}`
-    : category.name
-
   return (
-    <>
-      <Link
-        href={`/admin/buttons?category=${category.id}`}
-        className={`px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap min-h-[36px] flex items-center ${
-          isActive
-            ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 font-medium'
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-        }`}
-      >
-        {depth > 0 && '↳ '}
-        {displayName}
-      </Link>
-      {category.children.map((child) => (
-        <CategoryFilterLink
-          key={child.id}
-          category={child}
-          currentFilter={currentFilter}
-          depth={depth + 1}
-          parentName={category.name}
-        />
-      ))}
-    </>
+    <Link
+      href={`/admin/buttons?category=${category.id}`}
+      className={`px-3 py-1.5 rounded-lg text-sm transition-all whitespace-nowrap min-h-[36px] flex items-center ${
+        isActive
+          ? 'bg-primary text-primary-foreground ring-2 ring-primary/50 ring-offset-2 font-medium'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+      }`}
+    >
+      {category.name}
+    </Link>
   )
 }
