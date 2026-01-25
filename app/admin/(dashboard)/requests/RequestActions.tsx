@@ -13,6 +13,8 @@ import {
   ShoppingBag,
   CreditCard,
   ExternalLink,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react'
 
 type RequestActionsProps = {
@@ -23,6 +25,8 @@ type RequestActionsProps = {
   quotedPrice?: number
   convertedOrderId?: string
   deliveryPreference?: string
+  isPastRequest?: boolean
+  pendingOrderStatus?: string
 }
 
 const STATUS_FLOW: Record<string, { next: string; label: string; icon: typeof CheckCircle }[]> = {
@@ -46,6 +50,17 @@ const STATUS_FLOW: Record<string, { next: string; label: string; icon: typeof Ch
   ],
 }
 
+// All possible statuses for override dropdown
+const ALL_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'quoted', label: 'Quoted' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'production', label: 'In Production' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'declined', label: 'Declined' },
+]
+
 export default function RequestActions({
   requestId,
   currentStatus,
@@ -54,11 +69,13 @@ export default function RequestActions({
   quotedPrice,
   convertedOrderId,
   deliveryPreference,
+  isPastRequest = false,
 }: RequestActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showQuoteForm, setShowQuoteForm] = useState(false)
   const [showOrderForm, setShowOrderForm] = useState(false)
+  const [showStatusOverride, setShowStatusOverride] = useState(false)
   const [quoteAmount, setQuoteAmount] = useState(quotedPrice?.toString() || '')
   const [notes, setNotes] = useState('')
   const [orderPaymentMethod, setOrderPaymentMethod] = useState<'stripe' | 'other'>('stripe')
@@ -144,6 +161,96 @@ export default function RequestActions({
       setLoading(false)
       setShowOrderForm(false)
     }
+  }
+
+  const handleCancelOrder = async () => {
+    if (!convertedOrderId) return
+
+    const confirmed = confirm(
+      'Are you sure you want to cancel this order? This will:\n\n' +
+      '• Delete the pending order\n' +
+      '• Return the request to "Declined" status\n\n' +
+      'This action cannot be undone.'
+    )
+
+    if (!confirmed) return
+
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/admin/custom-requests/${requestId}/cancel-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel order')
+      }
+
+      alert('Order cancelled successfully. The request has been moved to declined status.')
+      router.refresh()
+    } catch (error) {
+      console.error('Error cancelling order:', error)
+      alert(error instanceof Error ? error.message : 'Failed to cancel order. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStatusOverride = async (newStatus: string) => {
+    if (newStatus === currentStatus) {
+      setShowStatusOverride(false)
+      return
+    }
+
+    const confirmed = confirm(
+      `Change status from "${currentStatus}" to "${newStatus}"?\n\n` +
+      'This will override the normal workflow.'
+    )
+
+    if (!confirmed) {
+      setShowStatusOverride(false)
+      return
+    }
+
+    await handleStatusUpdate(newStatus)
+    setShowStatusOverride(false)
+  }
+
+  // For past requests, show status override option
+  if (isPastRequest && (currentStatus === 'completed' || currentStatus === 'declined')) {
+    return (
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-gray-500">
+          This request has been {currentStatus}.
+        </span>
+        <div className="relative">
+          <button
+            onClick={() => setShowStatusOverride(!showStatusOverride)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Change Status
+            <ChevronDown className="w-4 h-4" />
+          </button>
+          {showStatusOverride && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1 min-w-[150px]">
+              {ALL_STATUSES.filter(s => s.value !== currentStatus).map((status) => (
+                <button
+                  key={status.value}
+                  onClick={() => handleStatusOverride(status.value)}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors"
+                >
+                  {status.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   if (currentStatus === 'completed' || currentStatus === 'declined') {
@@ -334,17 +441,27 @@ export default function RequestActions({
         </form>
       )}
 
-      {/* Converted Order Link */}
+      {/* Converted Order Link with Cancel Option */}
       {convertedOrderId && (
-        <div className="flex items-center gap-2 text-sm bg-green-50 text-green-800 px-3 py-2 rounded-lg">
-          <CheckCircle className="w-4 h-4" />
-          <span>Converted to order</span>
-          <a
-            href={`/admin/orders?status=all`}
-            className="inline-flex items-center gap-1 font-medium text-green-700 hover:text-green-900 underline"
+        <div className="flex items-center justify-between gap-2 text-sm bg-amber-50 text-amber-800 px-3 py-2 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            <span>Pending payment - order created, awaiting customer payment</span>
+            <a
+              href={`/admin/orders?status=all`}
+              className="inline-flex items-center gap-1 font-medium text-amber-700 hover:text-amber-900 underline"
+            >
+              View Order <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <button
+            onClick={handleCancelOrder}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
-            View Order <ExternalLink className="w-3 h-3" />
-          </a>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+            Cancel Order
+          </button>
         </div>
       )}
 

@@ -1,8 +1,12 @@
 import { getPayload } from '@/lib/payload'
 import CategoryList from './CategoryList'
 import AddCategoryForm from './AddCategoryForm'
+import SearchBar from '@/components/admin/SearchBar'
+import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
+
+type SearchParams = Promise<{ q?: string }>
 
 type PayloadCategory = {
   id: string
@@ -16,11 +20,20 @@ type PayloadCategory = {
   sortOrder: number
 }
 
-export default async function CategoriesPage() {
+export default async function CategoriesPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams
+  const searchQuery = params.q || ''
   const payload = await getPayload()
+
+  // Build where clause for search
+  let whereClause: Where | undefined
+  if (searchQuery) {
+    whereClause = { name: { contains: searchQuery } }
+  }
 
   const { docs: categories } = await payload.find({
     collection: 'categories',
+    where: whereClause,
     sort: 'sortOrder',
     limit: 200,
     depth: 1,
@@ -42,9 +55,14 @@ export default async function CategoriesPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-        <p className="text-gray-500">Organize your buttons into categories</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+          <p className="text-gray-500">Organize your buttons into categories</p>
+        </div>
+        <div className="w-full sm:w-64">
+          <SearchBar placeholder="Search categories..." />
+        </div>
       </div>
 
       {/* Add Category Form */}
