@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
     if (!neededByDate) {
       return NextResponse.json({ error: 'Please let us know when you need the buttons' }, { status: 400 })
     }
+    if (quantity < 5) {
+      return NextResponse.json({ error: 'Custom orders require a minimum of 5 buttons' }, { status: 400 })
+    }
 
     // Handle file uploads
     const referenceImages: { image: number | string; description: string }[] = []

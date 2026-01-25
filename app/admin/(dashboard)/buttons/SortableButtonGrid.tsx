@@ -53,76 +53,109 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
   const [items, setItems] = useState(buttons)
   const [saving, setSaving] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [selectedParent, setSelectedParent] = useState<string>('all')
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all')
+  // filterPath: Array of category IDs representing the drill-down path
+  // [] = "All", ['uncategorized'] = uncategorized, ['cat-1'] = top level, ['cat-1', 'cat-2'] = nested
+  const [filterPath, setFilterPath] = useState<string[]>([])
 
   // Sync local state when props change (e.g., after router.refresh())
   useEffect(() => {
     setItems(buttons)
   }, [buttons])
 
-  // Parent categories (where parentId is null)
-  const parentCategories = useMemo(() =>
+  // Helper to get category ID from item (handles object or string)
+  const getCategoryId = useCallback((item: PayloadButton): string | null => {
+    const cat = item.category
+    if (!cat) return null
+    if (typeof cat === 'object') return cat.id ? String(cat.id) : null
+    return String(cat)
+  }, [])
+
+  // Recursive function to get all descendant IDs including the parent itself
+  const getDescendantIds = useCallback((parentId: string): string[] => {
+    const children = categories.filter(c => String(c.parentId) === parentId)
+    return [parentId, ...children.flatMap(c => getDescendantIds(c.id))]
+  }, [categories])
+
+  // Get children of a specific category
+  const getChildCategories = useCallback((parentId: string | null): Category[] => {
+    if (parentId === null) {
+      return categories.filter(c => c.parentId === null)
+    }
+    return categories.filter(c => String(c.parentId) === parentId)
+  }, [categories])
+
+  // Root categories (where parentId is null)
+  const rootCategories = useMemo(() =>
     categories.filter(c => c.parentId === null),
     [categories]
   )
 
-  // Subcategories of selected parent
-  const subcategories = useMemo(() =>
-    selectedParent === 'all' || selectedParent === 'uncategorized'
-      ? []
-      : categories.filter(c => c.parentId === selectedParent),
-    [categories, selectedParent]
-  )
-
   // Count of uncategorized buttons
   const uncategorizedCount = useMemo(() =>
-    items.filter(item => {
-      const catId = typeof item.category === 'object' ? item.category?.id : item.category
-      return !catId
-    }).length,
-    [items]
+    items.filter(item => !getCategoryId(item)).length,
+    [items, getCategoryId]
   )
 
-  // Reset subcategory when parent changes
-  useEffect(() => {
-    setSelectedSubcategory('all')
-  }, [selectedParent])
+  // Build the cascading dropdown data - each level shows children of the selected category
+  const dropdownLevels = useMemo(() => {
+    const levels: { parentId: string | null; parentName: string; children: Category[] }[] = []
 
-  // Filter items based on selected category
+    // First level: root categories
+    const rootChildren = getChildCategories(null)
+    if (rootChildren.length > 0 || uncategorizedCount > 0) {
+      levels.push({ parentId: null, parentName: 'All', children: rootChildren })
+    }
+
+    // Subsequent levels based on filterPath
+    for (let i = 0; i < filterPath.length; i++) {
+      const selectedId = filterPath[i]
+      if (selectedId === 'uncategorized') break
+
+      const children = getChildCategories(selectedId)
+      if (children.length > 0) {
+        const selectedCat = categories.find(c => c.id === selectedId)
+        levels.push({
+          parentId: selectedId,
+          parentName: selectedCat?.name || 'Selected',
+          children
+        })
+      }
+    }
+
+    return levels
+  }, [filterPath, getChildCategories, categories, uncategorizedCount])
+
+  // Handle dropdown selection at a specific level
+  const handleLevelChange = useCallback((level: number, value: string) => {
+    if (value === 'all') {
+      // Reset to show all at this level - truncate filterPath
+      setFilterPath(prev => prev.slice(0, level))
+    } else {
+      // Set selection at this level and clear deeper levels
+      setFilterPath(prev => [...prev.slice(0, level), value])
+    }
+  }, [])
+
+  // Filter items based on filterPath
   const filteredItems = useMemo(() => {
-    if (selectedParent === 'all') {
-      return items
+    if (filterPath.length === 0) {
+      return items // Show all
     }
 
     // Handle uncategorized filter
-    if (selectedParent === 'uncategorized') {
-      return items.filter(item => {
-        const catId = typeof item.category === 'object' ? item.category?.id : item.category
-        return !catId
-      })
+    if (filterPath[0] === 'uncategorized') {
+      return items.filter(item => !getCategoryId(item))
     }
 
-    // Get all category IDs under selected parent (parent itself + all its children)
-    const childCategoryIds = categories
-      .filter(c => c.parentId === selectedParent)
-      .map(c => c.id)
-    const relevantCategoryIds = [selectedParent, ...childCategoryIds]
+    // Get the deepest selection in the path
+    const deepestSelection = filterPath[filterPath.length - 1]
+    const relevantIds = getDescendantIds(deepestSelection)
 
-    if (selectedSubcategory === 'all') {
-      // Show all buttons in parent and its children
-      return items.filter(item => {
-        const catId = typeof item.category === 'object' ? item.category?.id : item.category
-        return catId && relevantCategoryIds.includes(catId)
-      })
-    }
-
-    // Show only buttons in specific subcategory
     return items.filter(item => {
-      const catId = typeof item.category === 'object' ? item.category?.id : item.category
-      return catId === selectedSubcategory
+      const catId = getCategoryId(item)
+      return catId && relevantIds.includes(catId)
     })
-  }, [items, categories, selectedParent, selectedSubcategory])
+  }, [items, filterPath, getCategoryId, getDescendantIds])
 
   // Selection handlers
   const toggleSelect = useCallback((id: string) => {
@@ -202,46 +235,44 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
         </div>
       )}
 
-      {/* Category Filter Dropdowns */}
-      {(parentCategories.length > 0 || uncategorizedCount > 0) && (
+      {/* Category Filter Dropdowns - Cascading */}
+      {(rootCategories.length > 0 || uncategorizedCount > 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          {/* Parent Category Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-foreground/80">Category:</label>
-            <select
-              value={selectedParent}
-              onChange={(e) => setSelectedParent(e.target.value)}
-              className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">All Categories ({items.length})</option>
-              {uncategorizedCount > 0 && (
-                <option value="uncategorized">Uncategorized ({uncategorizedCount})</option>
-              )}
-              {parentCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
+          {/* Render cascading dropdowns dynamically */}
+          {dropdownLevels.map((level, index) => {
+            const currentSelection = filterPath[index] || 'all'
+            const isFirstLevel = index === 0
 
-          {/* Subcategory Dropdown - only show when parent is selected and has children */}
-          {selectedParent !== 'all' && selectedParent !== 'uncategorized' && subcategories.length > 0 && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-foreground/80">Subcategory:</label>
-              <select
-                value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
-                className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              >
-                <option value="all">All in {parentCategories.find(c => c.id === selectedParent)?.name}</option>
-                {subcategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+            return (
+              <div key={level.parentId ?? 'root'} className="flex items-center gap-2">
+                <label className="text-sm font-medium text-foreground/80">
+                  {isFirstLevel ? 'Category:' : `${level.parentName}:`}
+                </label>
+                <select
+                  value={currentSelection}
+                  onChange={(e) => handleLevelChange(index, e.target.value)}
+                  className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  {isFirstLevel ? (
+                    <>
+                      <option value="all">All Categories ({items.length})</option>
+                      {uncategorizedCount > 0 && (
+                        <option value="uncategorized">Uncategorized ({uncategorizedCount})</option>
+                      )}
+                    </>
+                  ) : (
+                    <option value="all">All in {level.parentName}</option>
+                  )}
+                  {level.children.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+            )
+          })}
 
           {/* Count display */}
-          {selectedParent !== 'all' && (
+          {filterPath.length > 0 && (
             <span className="text-sm text-muted-foreground">
               Showing {filteredItems.length} of {items.length} buttons
             </span>

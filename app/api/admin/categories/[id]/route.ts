@@ -18,10 +18,10 @@ export async function PATCH(
     const body = await request.json()
     const payload = await getPayload()
 
-    // Sanitize parent ID - convert string to number for relationship field
+    // Sanitize parent ID - keep as string for relationship field
     const data = { ...body }
     if (data.parent !== undefined) {
-      data.parent = data.parent ? Number(data.parent) : null
+      data.parent = data.parent || null
     }
 
     await payload.update({
