@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { getUser } from '@/lib/auth'
 
 type ReorderItem = {
   id: string
@@ -9,6 +9,11 @@ type ReorderItem = {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { items } = body as { items: ReorderItem[] }
 
@@ -19,7 +24,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
 
     // Update items sequentially to avoid exhausting connection pool
     for (const item of items) {

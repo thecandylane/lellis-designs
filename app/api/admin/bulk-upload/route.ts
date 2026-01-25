@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { getUser } from '@/lib/auth'
 
 type ButtonData = {
   name: string
@@ -10,8 +10,13 @@ type ButtonData = {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
 
     // Get button metadata from form
     const buttonsJson = formData.get('buttons') as string

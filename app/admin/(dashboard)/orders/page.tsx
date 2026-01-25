@@ -5,10 +5,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import OrderActions from './OrderActions'
 import { Sparkles } from 'lucide-react'
+import SearchBar from '@/components/admin/SearchBar'
 
 export const dynamic = 'force-dynamic'
 
-type SearchParams = Promise<{ status?: string }>
+type SearchParams = Promise<{ status?: string; q?: string }>
 
 // Type for Payload order document
 type PayloadOrder = {
@@ -77,17 +78,34 @@ const filterTabs = [
 export default async function OrdersPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   const filter = params.status || 'active'
+  const searchQuery = params.q || ''
   const payload = await getPayload()
 
   // Build where clause based on filter
-  let whereClause: Where | undefined
+  const conditions: Where[] = []
+
   if (filter === 'active') {
-    whereClause = {
-      status: { in: ['paid', 'production', 'ready', 'shipped'] }
-    }
+    conditions.push({ status: { in: ['paid', 'production', 'ready', 'shipped'] } })
   } else if (filter === 'completed') {
-    whereClause = { status: { equals: 'completed' } }
+    conditions.push({ status: { equals: 'completed' } })
   }
+
+  // Add search conditions
+  if (searchQuery) {
+    conditions.push({
+      or: [
+        { customerName: { contains: searchQuery } },
+        { customerEmail: { contains: searchQuery } },
+        { id: { contains: searchQuery } },
+      ],
+    })
+  }
+
+  const whereClause: Where | undefined = conditions.length > 0
+    ? conditions.length === 1
+      ? conditions[0]
+      : { and: conditions }
+    : undefined
 
   const { docs } = await payload.find({
     collection: 'orders',
@@ -106,9 +124,14 @@ export default async function OrdersPage({ searchParams }: { searchParams: Searc
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Orders</h1>
-        <p className="text-muted-foreground">View and fulfill customer orders</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Orders</h1>
+          <p className="text-muted-foreground">View and fulfill customer orders</p>
+        </div>
+        <div className="w-full sm:w-64">
+          <SearchBar placeholder="Search orders..." />
+        </div>
       </div>
 
       {/* Filter Tabs */}

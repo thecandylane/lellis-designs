@@ -1,10 +1,13 @@
 import { getPayload } from '@/lib/payload'
 import Link from 'next/link'
 import SortableButtonGrid from './SortableButtonGrid'
+import AddButtonForm from './AddButtonForm'
+import SearchBar from '@/components/admin/SearchBar'
+import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
 
-type SearchParams = Promise<{ category?: string }>
+type SearchParams = Promise<{ category?: string; q?: string }>
 
 type PayloadButton = {
   id: string
@@ -27,6 +30,7 @@ type PayloadCategory = {
 export default async function ButtonsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   const categoryFilter = params.category || 'all'
+  const searchQuery = params.q || ''
   const payload = await getPayload()
 
   // Fetch categories for filter
@@ -37,9 +41,21 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
     limit: 100,
   })
 
-  // Fetch buttons
-  const whereClause = categoryFilter !== 'all'
-    ? { category: { equals: categoryFilter } }
+  // Build where clause for buttons
+  const conditions: Where[] = []
+
+  if (categoryFilter !== 'all') {
+    conditions.push({ category: { equals: categoryFilter } })
+  }
+
+  if (searchQuery) {
+    conditions.push({ name: { contains: searchQuery } })
+  }
+
+  const whereClause: Where | undefined = conditions.length > 0
+    ? conditions.length === 1
+      ? conditions[0]
+      : { and: conditions }
     : undefined
 
   const { docs: buttons, totalDocs } = await payload.find({
@@ -60,15 +76,21 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
           <h1 className="text-2xl font-bold text-foreground">My Buttons</h1>
           <p className="text-muted-foreground">{totalDocs} button{totalDocs !== 1 ? 's' : ''} listed</p>
         </div>
-        <Link
-          href="/admin/upload"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px]"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Buttons
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="w-full sm:w-48">
+            <SearchBar placeholder="Search buttons..." />
+          </div>
+          <AddButtonForm categories={categories as PayloadCategory[]} />
+          <Link
+            href="/admin/upload"
+            className="bg-muted hover:bg-muted/80 text-foreground px-5 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px]"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Bulk Upload
+          </Link>
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -119,7 +141,10 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
           </Link>
         </div>
       ) : (
-        <SortableButtonGrid buttons={buttons as PayloadButton[]} />
+        <SortableButtonGrid
+          buttons={buttons as PayloadButton[]}
+          categories={(categories as PayloadCategory[]).map(c => ({ id: c.id, name: c.name }))}
+        />
       )}
     </div>
   )

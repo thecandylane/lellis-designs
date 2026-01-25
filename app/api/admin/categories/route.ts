@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { getUser } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { name, parent } = body
 
@@ -14,7 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
 
     // Validate parent exists if provided
     if (parent) {

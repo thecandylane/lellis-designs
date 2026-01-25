@@ -1,10 +1,15 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { formatDistanceToNow, format } from 'date-fns'
+import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import RequestActions from './RequestActions'
+import PastRequestsSection from './PastRequestsSection'
+import SearchBar from '@/components/admin/SearchBar'
+
+type SearchParams = Promise<{ q?: string }>
 import {
   Clock,
   AlertTriangle,
@@ -101,11 +106,25 @@ const FONT_LABELS: Record<string, string> = {
   modern: 'Modern/Clean',
 }
 
-export default async function RequestsPage() {
+export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams
+  const searchQuery = params.q || ''
   const payload = await getPayload({ config })
+
+  // Build where clause for search
+  let whereClause: Where | undefined
+  if (searchQuery) {
+    whereClause = {
+      or: [
+        { customerName: { contains: searchQuery } },
+        { customerEmail: { contains: searchQuery } },
+      ],
+    }
+  }
 
   const { docs: requests } = await payload.find({
     collection: 'custom-requests',
+    where: whereClause,
     sort: '-createdAt',
     limit: 100,
     depth: 2,
@@ -120,12 +139,15 @@ export default async function RequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Custom Requests</h1>
           <p className="text-muted-foreground mt-1">
             {activeRequests.length} active request{activeRequests.length !== 1 ? 's' : ''}
           </p>
+        </div>
+        <div className="w-full sm:w-64">
+          <SearchBar placeholder="Search requests..." />
         </div>
       </div>
 
@@ -153,12 +175,7 @@ export default async function RequestsPage() {
 
           {/* Completed/Declined Requests */}
           {completedRequests.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-muted-foreground">Past Requests</h2>
-              {completedRequests.map((request) => (
-                <RequestCard key={request.id} request={request} collapsed />
-              ))}
-            </div>
+            <PastRequestsSection requests={completedRequests} />
           )}
         </>
       )}

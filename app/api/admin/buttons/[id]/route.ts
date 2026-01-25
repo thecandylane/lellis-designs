@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import config from '@payload-config'
+import { getPayload } from '@/lib/payload'
+import { getUser } from '@/lib/auth'
 
 type Params = Promise<{ id: string }>
 
@@ -9,9 +9,14 @@ export async function PATCH(
   { params }: { params: Params }
 ) {
   try {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const body = await request.json()
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
 
     await payload.update({
       collection: 'buttons',
@@ -34,8 +39,13 @@ export async function DELETE(
   { params }: { params: Params }
 ) {
   try {
+    const user = await getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
-    const payload = await getPayload({ config })
+    const payload = await getPayload()
 
     await payload.delete({
       collection: 'buttons',

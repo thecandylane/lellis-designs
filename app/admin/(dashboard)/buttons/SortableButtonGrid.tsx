@@ -35,7 +35,17 @@ type PayloadButton = {
   createdAt: string
 }
 
-export default function SortableButtonGrid({ buttons }: { buttons: PayloadButton[] }) {
+type Category = {
+  id: string
+  name: string
+}
+
+type Props = {
+  buttons: PayloadButton[]
+  categories?: Category[]
+}
+
+export default function SortableButtonGrid({ buttons, categories = [] }: Props) {
   const router = useRouter()
   const [items, setItems] = useState(buttons)
   const [saving, setSaving] = useState(false)
@@ -101,7 +111,7 @@ export default function SortableButtonGrid({ buttons }: { buttons: PayloadButton
         <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {items.map((button) => (
-              <SortableButtonCard key={button.id} button={button} />
+              <SortableButtonCard key={button.id} button={button} categories={categories} />
             ))}
           </div>
         </SortableContext>
@@ -110,7 +120,7 @@ export default function SortableButtonGrid({ buttons }: { buttons: PayloadButton
   )
 }
 
-function SortableButtonCard({ button }: { button: PayloadButton }) {
+function SortableButtonCard({ button, categories }: { button: PayloadButton; categories: Category[] }) {
   const {
     attributes,
     listeners,
@@ -188,6 +198,10 @@ function SortableButtonCard({ button }: { button: PayloadButton }) {
             buttonId={button.id}
             isActive={button.active}
             buttonName={button.name}
+            buttonDescription={button.description}
+            buttonPrice={button.price}
+            buttonCategoryId={typeof button.category === 'object' ? button.category?.id : undefined}
+            categories={categories}
           />
         </div>
       </div>

@@ -3,6 +3,7 @@ import { getPayload } from '@/lib/payload'
 import type { Order } from '@/lib/types'
 import Link from 'next/link'
 import UpdateStatusButton from './UpdateStatusButton'
+import OrderActions from './OrderActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -141,9 +142,12 @@ export default async function OrderDetailPage({
             <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
             <p className="text-sm text-gray-500">{formattedDate}</p>
           </div>
-          <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${status.className}`}>
-            {status.label}
-          </span>
+          <div className="flex items-center gap-4">
+            <OrderActions order={typedOrder} />
+            <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${status.className}`}>
+              {status.label}
+            </span>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
