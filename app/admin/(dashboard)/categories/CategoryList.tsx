@@ -29,6 +29,7 @@ type CategoryNode = {
   description?: string | null
   active: boolean
   buttonCount: number
+  totalButtonCount: number
   sortOrder: number
   iconUrl?: string | null
   colorPrimary?: string | null
@@ -285,7 +286,7 @@ function CategoryRow({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -483,7 +484,11 @@ function CategoryRow({
 
           {/* Button Count */}
           <span className="text-sm text-gray-500 whitespace-nowrap">
-            {category.buttonCount} button{category.buttonCount !== 1 ? 's' : ''}
+            {category.buttonCount === category.totalButtonCount ? (
+              <>{category.buttonCount} button{category.buttonCount !== 1 ? 's' : ''}</>
+            ) : (
+              <>{category.buttonCount} button{category.buttonCount !== 1 ? 's' : ''} ({category.totalButtonCount} total)</>
+            )}
           </span>
         </div>
 

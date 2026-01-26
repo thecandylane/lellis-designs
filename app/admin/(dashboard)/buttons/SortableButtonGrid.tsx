@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Loader2, GripVertical, Star, Check } from 'lucide-react'
 import ButtonActions from './ButtonActions'
 import BulkActionToolbar from './BulkActionToolbar'
+import PaginationControls from '@/components/admin/PaginationControls'
 
 type PayloadButton = {
   id: string
@@ -41,121 +42,35 @@ type Category = {
   id: string
   name: string
   parentId: string | null
+  buttonCount?: number
+  totalButtonCount?: number
+}
+
+type PaginationInfo = {
+  currentPage: number
+  totalPages: number
+  totalDocs: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
 }
 
 type Props = {
   buttons: PayloadButton[]
   categories?: Category[]
+  pagination?: PaginationInfo
 }
 
-export default function SortableButtonGrid({ buttons, categories = [] }: Props) {
+export default function SortableButtonGrid({ buttons, categories = [], pagination }: Props) {
   const router = useRouter()
   const [items, setItems] = useState(buttons)
   const [saving, setSaving] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  // filterPath: Array of category IDs representing the drill-down path
-  // [] = "All", ['uncategorized'] = uncategorized, ['cat-1'] = top level, ['cat-1', 'cat-2'] = nested
-  const [filterPath, setFilterPath] = useState<string[]>([])
 
   // Sync local state when props change (e.g., after router.refresh())
   useEffect(() => {
     setItems(buttons)
   }, [buttons])
-
-  // Helper to get category ID from item (handles object or string)
-  const getCategoryId = useCallback((item: PayloadButton): string | null => {
-    const cat = item.category
-    if (!cat) return null
-    if (typeof cat === 'object') return cat.id ? String(cat.id) : null
-    return String(cat)
-  }, [])
-
-  // Recursive function to get all descendant IDs including the parent itself
-  const getDescendantIds = useCallback((parentId: string): string[] => {
-    const children = categories.filter(c => String(c.parentId) === parentId)
-    return [parentId, ...children.flatMap(c => getDescendantIds(c.id))]
-  }, [categories])
-
-  // Get children of a specific category
-  const getChildCategories = useCallback((parentId: string | null): Category[] => {
-    if (parentId === null) {
-      return categories.filter(c => c.parentId === null)
-    }
-    return categories.filter(c => String(c.parentId) === parentId)
-  }, [categories])
-
-  // Root categories (where parentId is null)
-  const rootCategories = useMemo(() =>
-    categories.filter(c => c.parentId === null),
-    [categories]
-  )
-
-  // Count of uncategorized buttons
-  const uncategorizedCount = useMemo(() =>
-    items.filter(item => !getCategoryId(item)).length,
-    [items, getCategoryId]
-  )
-
-  // Build the cascading dropdown data - each level shows children of the selected category
-  const dropdownLevels = useMemo(() => {
-    const levels: { parentId: string | null; parentName: string; children: Category[] }[] = []
-
-    // First level: root categories
-    const rootChildren = getChildCategories(null)
-    if (rootChildren.length > 0 || uncategorizedCount > 0) {
-      levels.push({ parentId: null, parentName: 'All', children: rootChildren })
-    }
-
-    // Subsequent levels based on filterPath
-    for (let i = 0; i < filterPath.length; i++) {
-      const selectedId = filterPath[i]
-      if (selectedId === 'uncategorized') break
-
-      const children = getChildCategories(selectedId)
-      if (children.length > 0) {
-        const selectedCat = categories.find(c => c.id === selectedId)
-        levels.push({
-          parentId: selectedId,
-          parentName: selectedCat?.name || 'Selected',
-          children
-        })
-      }
-    }
-
-    return levels
-  }, [filterPath, getChildCategories, categories, uncategorizedCount])
-
-  // Handle dropdown selection at a specific level
-  const handleLevelChange = useCallback((level: number, value: string) => {
-    if (value === 'all') {
-      // Reset to show all at this level - truncate filterPath
-      setFilterPath(prev => prev.slice(0, level))
-    } else {
-      // Set selection at this level and clear deeper levels
-      setFilterPath(prev => [...prev.slice(0, level), value])
-    }
-  }, [])
-
-  // Filter items based on filterPath
-  const filteredItems = useMemo(() => {
-    if (filterPath.length === 0) {
-      return items // Show all
-    }
-
-    // Handle uncategorized filter
-    if (filterPath[0] === 'uncategorized') {
-      return items.filter(item => !getCategoryId(item))
-    }
-
-    // Get the deepest selection in the path
-    const deepestSelection = filterPath[filterPath.length - 1]
-    const relevantIds = getDescendantIds(deepestSelection)
-
-    return items.filter(item => {
-      const catId = getCategoryId(item)
-      return catId && relevantIds.includes(catId)
-    })
-  }, [items, filterPath, getCategoryId, getDescendantIds])
 
   // Selection handlers
   const toggleSelect = useCallback((id: string) => {
@@ -171,8 +86,8 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
   }, [])
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(filteredItems.map(item => item.id)))
-  }, [filteredItems])
+    setSelectedIds(new Set(items.map(item => item.id)))
+  }, [items])
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set())
@@ -224,8 +139,8 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
     }
   }
 
-  const allSelected = filteredItems.length > 0 && selectedIds.size === filteredItems.length
-  const someSelected = selectedIds.size > 0 && selectedIds.size < filteredItems.length
+  const allSelected = items.length > 0 && selectedIds.size === items.length
+  const someSelected = selectedIds.size > 0 && selectedIds.size < items.length
 
   return (
     <div className="relative">
@@ -235,53 +150,8 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
         </div>
       )}
 
-      {/* Category Filter Dropdowns - Cascading */}
-      {(rootCategories.length > 0 || uncategorizedCount > 0) && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          {/* Render cascading dropdowns dynamically */}
-          {dropdownLevels.map((level, index) => {
-            const currentSelection = filterPath[index] || 'all'
-            const isFirstLevel = index === 0
-
-            return (
-              <div key={level.parentId ?? 'root'} className="flex items-center gap-2">
-                <label className="text-sm font-medium text-foreground/80">
-                  {isFirstLevel ? 'Category:' : `${level.parentName}:`}
-                </label>
-                <select
-                  value={currentSelection}
-                  onChange={(e) => handleLevelChange(index, e.target.value)}
-                  className="bg-card border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  {isFirstLevel ? (
-                    <>
-                      <option value="all">All Categories ({items.length})</option>
-                      {uncategorizedCount > 0 && (
-                        <option value="uncategorized">Uncategorized ({uncategorizedCount})</option>
-                      )}
-                    </>
-                  ) : (
-                    <option value="all">All in {level.parentName}</option>
-                  )}
-                  {level.children.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-            )
-          })}
-
-          {/* Count display */}
-          {filterPath.length > 0 && (
-            <span className="text-sm text-muted-foreground">
-              Showing {filteredItems.length} of {items.length} buttons
-            </span>
-          )}
-        </div>
-      )}
-
       {/* Select All Header */}
-      {filteredItems.length > 0 && (
+      {items.length > 0 && (
         <div className="mb-4 flex items-center gap-3">
           <button
             onClick={allSelected ? clearSelection : selectAll}
@@ -296,7 +166,7 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
             {(allSelected || someSelected) && <Check className="w-3 h-3" />}
           </button>
           <span className="text-sm text-muted-foreground">
-            {selectedIds.size > 0 ? `${selectedIds.size} of ${filteredItems.length} selected` : 'Select all'}
+            {selectedIds.size > 0 ? `${selectedIds.size} of ${items.length} selected` : 'Select all'}
           </span>
         </div>
       )}
@@ -306,9 +176,9 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={filteredItems.map((i) => i.id)} strategy={rectSortingStrategy}>
+        <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredItems.map((button) => (
+            {items.map((button) => (
               <SortableButtonCard
                 key={button.id}
                 button={button}
@@ -320,6 +190,13 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <Suspense fallback={<div className="h-12 mt-6" />}>
+          <PaginationControls {...pagination} />
+        </Suspense>
+      )}
 
       {/* Bulk Action Toolbar */}
       <BulkActionToolbar
