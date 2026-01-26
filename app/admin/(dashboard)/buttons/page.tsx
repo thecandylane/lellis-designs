@@ -1,10 +1,12 @@
+import { Suspense } from 'react'
 import { getPayload } from '@/lib/payload'
 import Link from 'next/link'
 import SortableButtonGrid from './SortableButtonGrid'
 import AddButtonForm from './AddButtonForm'
 import SearchBar from '@/components/admin/SearchBar'
 import FilterTabs from '@/components/admin/FilterTabs'
-import { getDescendantCategoryIds } from '@/lib/admin/categoryUtils'
+import CategoryFilter from '@/components/admin/CategoryFilter'
+import { getDescendantCategoryIds, batchCountButtonsByCategory } from '@/lib/admin/categoryUtils'
 import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
@@ -40,7 +42,7 @@ type PayloadCategory = {
 export default async function ButtonsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   const searchQuery = params.q || ''
-  const statusFilter = params.status || 'all'
+  const statusFilter = params.status || 'active'
   const categoryFilter = params.category || ''
   const currentPage = Math.max(1, parseInt(params.page || '1', 10))
   const limit = Math.min(100, Math.max(12, parseInt(params.limit || String(DEFAULT_LIMIT), 10)))
@@ -91,7 +93,9 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
   // Category filter (server-side with descendants)
   if (categoryFilter) {
     const descendantIds = getDescendantCategoryIds(categoryFilter, allCategories as PayloadCategory[])
-    whereConditions.push({ category: { in: descendantIds } })
+    // Convert to numbers for Postgres query
+    const descendantIdsForQuery = descendantIds.map(id => parseInt(id, 10))
+    whereConditions.push({ category: { in: descendantIdsForQuery } })
   }
 
   // Combine conditions
@@ -129,14 +133,16 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
     }),
   ])
 
-  // Get total buttons for "All" tab
+  // Get total buttons count for category filter
   const { totalDocs: allButtonsCount } = await payload.count({ collection: 'buttons' })
 
   // Active categories for the dropdown
   const activeCategories = allCategories.filter(c => c.active)
 
+  // Fetch button counts per category for the filter dropdown
+  const categoryCounts = await batchCountButtonsByCategory(payload, activeCategories as PayloadCategory[])
+
   const filterOptions = [
-    { value: 'all', label: 'All', count: allButtonsCount },
     { value: 'active', label: 'Active', count: activeCount.totalDocs },
     { value: 'hidden', label: 'Hidden', count: hiddenCount.totalDocs },
     { value: 'featured', label: 'Featured', count: featuredCount.totalDocs },
@@ -179,8 +185,28 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
 
       {/* Filter Tabs */}
       <div className="mb-6">
-        <FilterTabs options={filterOptions} />
+        <Suspense fallback={<div className="h-10" />}>
+          <FilterTabs options={filterOptions} defaultValue="active" />
+        </Suspense>
       </div>
+
+      {/* Category Filter */}
+      <Suspense fallback={<div className="h-10" />}>
+        <CategoryFilter
+          categories={(activeCategories as PayloadCategory[]).map(c => {
+            const counts = categoryCounts.get(String(c.id)) || { direct: 0, total: 0 }
+            return {
+              id: String(c.id),
+              name: c.name,
+              parentId: typeof c.parent === 'object' ? (c.parent?.id ? String(c.parent.id) : null) : (c.parent ? String(c.parent) : null),
+              buttonCount: counts.direct,
+              totalButtonCount: counts.total,
+            }
+          })}
+          totalButtons={allButtonsCount}
+          uncategorizedCount={uncategorizedCount.totalDocs}
+        />
+      </Suspense>
 
       {/* Buttons Grid */}
       {buttons.length === 0 ? (
@@ -191,14 +217,16 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
             </svg>
           </div>
           <h3 className="text-lg font-medium text-foreground mb-1">
-            {statusFilter !== 'all' || searchQuery ? 'No matching buttons' : 'No buttons yet'}
+            {searchQuery || categoryFilter ? 'No matching buttons' : 'No buttons found'}
           </h3>
           <p className="text-muted-foreground mb-4">
-            {statusFilter !== 'all' || searchQuery
+            {searchQuery || categoryFilter
               ? 'Try adjusting your filters or search terms.'
-              : 'Upload your first button designs to get started!'}
+              : statusFilter === 'active'
+                ? 'No active buttons yet. Upload your first button designs to get started!'
+                : `No ${statusFilter} buttons found.`}
           </p>
-          {!searchQuery && statusFilter === 'all' && (
+          {!searchQuery && !categoryFilter && statusFilter === 'active' && (
             <Link
               href="/admin/upload"
               className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-lg font-medium transition-colors"
@@ -213,11 +241,16 @@ export default async function ButtonsPage({ searchParams }: { searchParams: Sear
       ) : (
         <SortableButtonGrid
           buttons={buttons as PayloadButton[]}
-          categories={(activeCategories as PayloadCategory[]).map(c => ({
-            id: c.id,
-            name: c.name,
-            parentId: typeof c.parent === 'object' ? (c.parent?.id ?? null) : (c.parent ?? null)
-          }))}
+          categories={(activeCategories as PayloadCategory[]).map(c => {
+            const counts = categoryCounts.get(String(c.id)) || { direct: 0, total: 0 }
+            return {
+              id: c.id,
+              name: c.name,
+              parentId: typeof c.parent === 'object' ? (c.parent?.id ?? null) : (c.parent ?? null),
+              buttonCount: counts.direct,
+              totalButtonCount: counts.total,
+            }
+          })}
           pagination={paginationProps}
         />
       )}

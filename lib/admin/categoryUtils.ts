@@ -7,40 +7,47 @@ type CategoryWithParent = {
 
 /**
  * Get all descendant category IDs for a given category (including itself)
+ * Note: All IDs are normalized to strings to handle PostgreSQL integer IDs
  */
 export function getDescendantCategoryIds(
   categoryId: string,
   categories: CategoryWithParent[]
 ): string[] {
-  const descendants: string[] = [categoryId]
+  const normalizedCategoryId = String(categoryId)
+  const descendants: string[] = [normalizedCategoryId]
 
   const findChildren = (parentId: string) => {
     for (const cat of categories) {
       const catParentId = typeof cat.parent === 'object' ? cat.parent?.id : cat.parent
-      if (catParentId === parentId) {
-        descendants.push(cat.id)
-        findChildren(cat.id)
+      // Normalize both sides for comparison
+      if (catParentId != null && String(catParentId) === parentId) {
+        const childId = String(cat.id)
+        descendants.push(childId)
+        findChildren(childId)
       }
     }
   }
 
-  findChildren(categoryId)
+  findChildren(normalizedCategoryId)
   return descendants
 }
 
 /**
  * Build a parent-to-children map for efficient tree traversal
+ * Note: All IDs are normalized to strings to handle PostgreSQL integer IDs
  */
 function buildParentChildMap(categories: CategoryWithParent[]): Map<string | null, string[]> {
   const map = new Map<string | null, string[]>()
 
   for (const cat of categories) {
     const parentId = typeof cat.parent === 'object' ? cat.parent?.id : cat.parent
-    const key = parentId ?? null
+    // Normalize key to string (or null for root categories)
+    const key = parentId ? String(parentId) : null
     if (!map.has(key)) {
       map.set(key, [])
     }
-    map.get(key)!.push(cat.id)
+    // Normalize child ID to string
+    map.get(key)!.push(String(cat.id))
   }
 
   return map
@@ -92,28 +99,34 @@ export async function batchCountButtonsByCategory(
     return result
   }
 
-  // Get all category IDs
-  const categoryIds = categories.map(c => c.id)
+  // Get category IDs as numbers for Postgres query
+  const categoryIdsForQuery = categories.map(c =>
+    typeof c.id === 'number' ? c.id : parseInt(String(c.id), 10)
+  )
 
   // Fetch all buttons with their category IDs in a single query
   const { docs: buttons } = await payload.find({
     collection: 'buttons',
     where: {
-      category: { in: categoryIds }
+      category: { in: categoryIdsForQuery }
     },
     limit: 10000, // Get all buttons
     depth: 0, // Don't need to populate relations
   })
 
   // Count buttons per category (direct counts)
+  // At depth: 0, category is returned as an ID directly (may be number from PostgreSQL)
   const directCounts = new Map<string, number>()
   for (const button of buttons) {
-    const catId = typeof button.category === 'object'
-      ? (button.category as { id: string })?.id
-      : button.category
+    const cat = button.category
+    // Handle both ID (depth: 0) and object (depth: 1+) cases, always normalize to string
+    const catId = cat
+      ? typeof cat === 'object' && cat !== null
+        ? String((cat as { id: string }).id)
+        : String(cat)
+      : null
     if (catId) {
-      const catIdStr = String(catId)
-      directCounts.set(catIdStr, (directCounts.get(catIdStr) || 0) + 1)
+      directCounts.set(catId, (directCounts.get(catId) || 0) + 1)
     }
   }
 
@@ -124,7 +137,8 @@ export async function batchCountButtonsByCategory(
   const totalCountCache = new Map<string, number>()
 
   for (const cat of categories) {
-    const catId = cat.id
+    // Normalize ID to string for consistent Map key matching
+    const catId = String(cat.id)
     const direct = directCounts.get(catId) || 0
     const total = sumDescendantCounts(catId, directCounts, parentChildMap, totalCountCache)
 

@@ -286,7 +286,7 @@ function CategoryRow({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [expanded, setExpanded] = useState(true)
+  const [expanded, setExpanded] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [uploading, setUploading] = useState(false)

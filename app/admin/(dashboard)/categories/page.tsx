@@ -114,7 +114,8 @@ function buildTree(
   for (const cat of categories) {
     // Extract icon URL from populated or string value
     const iconUrl = typeof cat.icon === 'object' ? cat.icon?.url : null
-    const catCounts = counts.get(cat.id) || { direct: 0, total: 0 }
+    // Normalize ID to string for Map lookup (PostgreSQL returns integers)
+    const catCounts = counts.get(String(cat.id)) || { direct: 0, total: 0 }
 
     map.set(cat.id, {
       id: cat.id,
