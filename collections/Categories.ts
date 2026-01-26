@@ -48,6 +48,7 @@ export const Categories: CollectionConfig = {
     {
       name: 'tags',
       type: 'array',
+      maxRows: 20,
       admin: {
         description: 'Keywords for search and filtering (e.g., "football", "greek life", "sorority")',
       },
@@ -62,6 +63,7 @@ export const Categories: CollectionConfig = {
     {
       name: 'aliases',
       type: 'array',
+      maxRows: 10,
       admin: {
         description: 'Alternative names or abbreviations (e.g., "Chi Omega" could have alias "Chi-O")',
       },

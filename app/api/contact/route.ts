@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendAdminContactNotification } from '@/lib/email'
+import { getPayload } from '@/lib/payload'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +25,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
     }
 
+    // Save contact request to database
+    const payload = await getPayload()
+    await payload.create({
+      collection: 'contact-requests',
+      data: {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        subject: subject?.trim() || undefined,
+        message: message.trim(),
+      },
+    })
+
     // Send notification email to admin
     try {
       await sendAdminContactNotification({
@@ -34,8 +47,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (emailError) {
       console.error('Failed to send contact notification:', emailError)
-      // Still return success - we don't want to fail the form if email fails
-      // In production, you might want to log this to a database as backup
+      // Still return success - the contact request is saved to the database
     }
 
     return NextResponse.json({

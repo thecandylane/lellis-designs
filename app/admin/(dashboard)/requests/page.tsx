@@ -5,11 +5,13 @@ import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
 import Image from 'next/image'
+import Link from 'next/link'
 import RequestActions from './RequestActions'
 import PastRequestsSection from './PastRequestsSection'
+import ContactRequestCard from './ContactRequestCard'
 import SearchBar from '@/components/admin/SearchBar'
 
-type SearchParams = Promise<{ q?: string }>
+type SearchParams = Promise<{ q?: string; tab?: string }>
 import {
   Clock,
   AlertTriangle,
@@ -69,6 +71,16 @@ type CustomRequest = {
   convertedOrderId?: string | { id: string }
 }
 
+type ContactRequest = {
+  id: string
+  createdAt: string
+  name: string
+  email: string
+  subject?: string
+  message: string
+  status: string
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   new: { label: 'New', color: 'bg-blue-100 text-blue-800' },
   contacted: { label: 'Contacted', color: 'bg-yellow-100 text-yellow-800' },
@@ -109,12 +121,13 @@ const FONT_LABELS: Record<string, string> = {
 export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams
   const searchQuery = params.q || ''
+  const activeTab = params.tab || 'custom'
   const payload = await getPayload({ config })
 
-  // Build where clause for search
-  let whereClause: Where | undefined
+  // Build where clause for custom requests search
+  let customWhereClause: Where | undefined
   if (searchQuery) {
-    whereClause = {
+    customWhereClause = {
       or: [
         { customerName: { contains: searchQuery } },
         { customerEmail: { contains: searchQuery } },
@@ -122,28 +135,59 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
     }
   }
 
-  const { docs: requests } = await payload.find({
-    collection: 'custom-requests',
-    where: whereClause,
-    sort: '-createdAt',
-    limit: 100,
-    depth: 2,
-  })
+  // Build where clause for contact requests search
+  let contactWhereClause: Where | undefined
+  if (searchQuery) {
+    contactWhereClause = {
+      or: [
+        { name: { contains: searchQuery } },
+        { email: { contains: searchQuery } },
+        { subject: { contains: searchQuery } },
+      ],
+    }
+  }
 
-  const activeRequests = (requests as unknown as CustomRequest[]).filter(
+  // Fetch both collections
+  const [customRequestsResult, contactRequestsResult] = await Promise.all([
+    payload.find({
+      collection: 'custom-requests',
+      where: customWhereClause,
+      sort: '-createdAt',
+      limit: 100,
+      depth: 2,
+    }),
+    payload.find({
+      collection: 'contact-requests',
+      where: contactWhereClause,
+      sort: '-createdAt',
+      limit: 100,
+    }),
+  ])
+
+  const customRequests = customRequestsResult.docs as unknown as CustomRequest[]
+  const contactRequests = contactRequestsResult.docs as unknown as ContactRequest[]
+
+  const activeCustomRequests = customRequests.filter(
     (r) => !['completed', 'declined'].includes(r.status)
   )
-  const completedRequests = (requests as unknown as CustomRequest[]).filter((r) =>
+  const completedCustomRequests = customRequests.filter((r) =>
     ['completed', 'declined'].includes(r.status)
   )
+
+  const newContactRequests = contactRequests.filter((r) => r.status === 'new')
+  const respondedContactRequests = contactRequests.filter((r) => r.status === 'responded')
+
+  // Count badges
+  const customCount = activeCustomRequests.length
+  const contactCount = newContactRequests.length
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Custom Requests</h1>
+          <h1 className="text-2xl font-bold text-foreground">Requests</h1>
           <p className="text-muted-foreground mt-1">
-            {activeRequests.length} active request{activeRequests.length !== 1 ? 's' : ''}
+            Manage custom button requests and contact messages
           </p>
         </div>
         <div className="w-full sm:w-64">
@@ -151,31 +195,125 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
         </div>
       </div>
 
-      {activeRequests.length === 0 && completedRequests.length === 0 ? (
-        <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium text-foreground mb-1">No custom requests yet</h3>
-          <p className="text-muted-foreground">
-            When customers submit custom button requests, they&apos;ll appear here.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Active Requests */}
-          {activeRequests.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Active Requests</h2>
-              {activeRequests.map((request) => (
-                <RequestCard key={request.id} request={request} />
-              ))}
-            </div>
-          )}
+      {/* Tab Navigation */}
+      <div className="border-b border-border">
+        <nav className="flex gap-4" aria-label="Tabs">
+          <Link
+            href={`/admin/requests?tab=custom${searchQuery ? `&q=${searchQuery}` : ''}`}
+            className={`relative py-3 px-1 text-sm font-medium transition-colors ${
+              activeTab === 'custom'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              Custom Requests
+              {customCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                  {customCount}
+                </span>
+              )}
+            </span>
+            {activeTab === 'custom' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+            )}
+          </Link>
+          <Link
+            href={`/admin/requests?tab=contact${searchQuery ? `&q=${searchQuery}` : ''}`}
+            className={`relative py-3 px-1 text-sm font-medium transition-colors ${
+              activeTab === 'contact'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              Contact Messages
+              {contactCount > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">
+                  {contactCount}
+                </span>
+              )}
+            </span>
+            {activeTab === 'contact' && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+            )}
+          </Link>
+        </nav>
+      </div>
 
-          {/* Completed/Declined Requests */}
-          {completedRequests.length > 0 && (
-            <PastRequestsSection requests={completedRequests} />
+      {/* Custom Requests Tab */}
+      {activeTab === 'custom' && (
+        <>
+          {activeCustomRequests.length === 0 && completedCustomRequests.length === 0 ? (
+            <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">No custom requests yet</h3>
+              <p className="text-muted-foreground">
+                When customers submit custom button requests, they&apos;ll appear here.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Active Requests */}
+              {activeCustomRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground">Active Requests</h2>
+                  {activeCustomRequests.map((request) => (
+                    <RequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+              )}
+
+              {/* Completed/Declined Requests */}
+              {completedCustomRequests.length > 0 && (
+                <PastRequestsSection requests={completedCustomRequests} />
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Contact Messages Tab */}
+      {activeTab === 'contact' && (
+        <>
+          {contactRequests.length === 0 ? (
+            <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">No contact messages yet</h3>
+              <p className="text-muted-foreground">
+                When customers submit the contact form, their messages will appear here.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* New Messages */}
+              {newContactRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground">
+                    New Messages ({newContactRequests.length})
+                  </h2>
+                  {newContactRequests.map((request) => (
+                    <ContactRequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+              )}
+
+              {/* Responded Messages */}
+              {respondedContactRequests.length > 0 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-muted-foreground">
+                    Responded ({respondedContactRequests.length})
+                  </h2>
+                  {respondedContactRequests.map((request) => (
+                    <ContactRequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

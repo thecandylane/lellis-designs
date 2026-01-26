@@ -39,6 +39,7 @@ export const Buttons: CollectionConfig = {
     {
       name: 'tags',
       type: 'array',
+      maxRows: 20,
       admin: {
         description: 'Additional tags for search (e.g., "gameday", "tailgate", "school spirit")',
       },
