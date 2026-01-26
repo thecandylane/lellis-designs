@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Loader2, GripVertical, Star, Check } from 'lucide-react'
 import ButtonActions from './ButtonActions'
 import BulkActionToolbar from './BulkActionToolbar'
+import PaginationControls from '@/components/admin/PaginationControls'
 
 type PayloadButton = {
   id: string
@@ -43,12 +44,22 @@ type Category = {
   parentId: string | null
 }
 
+type PaginationInfo = {
+  currentPage: number
+  totalPages: number
+  totalDocs: number
+  limit: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 type Props = {
   buttons: PayloadButton[]
   categories?: Category[]
+  pagination?: PaginationInfo
 }
 
-export default function SortableButtonGrid({ buttons, categories = [] }: Props) {
+export default function SortableButtonGrid({ buttons, categories = [], pagination }: Props) {
   const router = useRouter()
   const [items, setItems] = useState(buttons)
   const [saving, setSaving] = useState(false)
@@ -320,6 +331,11 @@ export default function SortableButtonGrid({ buttons, categories = [] }: Props) 
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <PaginationControls {...pagination} />
+      )}
 
       {/* Bulk Action Toolbar */}
       <BulkActionToolbar

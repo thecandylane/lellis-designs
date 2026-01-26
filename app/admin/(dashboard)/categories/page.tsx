@@ -2,6 +2,7 @@ import { getPayload } from '@/lib/payload'
 import CategoryList from './CategoryList'
 import AddCategoryForm from './AddCategoryForm'
 import SearchBar from '@/components/admin/SearchBar'
+import { batchCountButtonsByCategory, type CategoryCounts } from '@/lib/admin/categoryUtils'
 import type { Where } from 'payload'
 
 export const dynamic = 'force-dynamic'
@@ -26,10 +27,16 @@ export default async function CategoriesPage({ searchParams }: { searchParams: S
   const searchQuery = params.q || ''
   const payload = await getPayload()
 
-  // Build where clause for search
+  // Build where clause for search - search across multiple fields
   let whereClause: Where | undefined
   if (searchQuery) {
-    whereClause = { name: { contains: searchQuery } }
+    whereClause = {
+      or: [
+        { name: { contains: searchQuery } },
+        { description: { contains: searchQuery } },
+        { slug: { contains: searchQuery } },
+      ]
+    }
   }
 
   const { docs: categories } = await payload.find({
@@ -40,16 +47,8 @@ export default async function CategoriesPage({ searchParams }: { searchParams: S
     depth: 1,
   })
 
-  // Count buttons per category
-  const categoryCounts = new Map<string, number>()
-  for (const cat of categories) {
-    const catId = String(cat.id)
-    const { totalDocs } = await payload.count({
-      collection: 'buttons',
-      where: { category: { equals: catId } },
-    })
-    categoryCounts.set(catId, totalDocs)
-  }
+  // Batch count buttons per category (single query instead of N+1)
+  const categoryCounts = await batchCountButtonsByCategory(payload, categories as PayloadCategory[])
 
   // Build tree structure
   const categoryTree = buildTree(categories as PayloadCategory[], categoryCounts)
@@ -96,6 +95,7 @@ type CategoryNode = {
   description?: string | null
   active: boolean
   buttonCount: number
+  totalButtonCount: number
   sortOrder: number
   iconUrl?: string | null
   colorPrimary?: string | null
@@ -105,7 +105,7 @@ type CategoryNode = {
 
 function buildTree(
   categories: PayloadCategory[],
-  counts: Map<string, number>
+  counts: Map<string, CategoryCounts>
 ): CategoryNode[] {
   const map = new Map<string, CategoryNode>()
   const roots: CategoryNode[] = []
@@ -114,6 +114,7 @@ function buildTree(
   for (const cat of categories) {
     // Extract icon URL from populated or string value
     const iconUrl = typeof cat.icon === 'object' ? cat.icon?.url : null
+    const catCounts = counts.get(cat.id) || { direct: 0, total: 0 }
 
     map.set(cat.id, {
       id: cat.id,
@@ -121,7 +122,8 @@ function buildTree(
       slug: cat.slug,
       description: cat.description,
       active: cat.active,
-      buttonCount: counts.get(cat.id) || 0,
+      buttonCount: catCounts.direct,
+      totalButtonCount: catCounts.total,
       sortOrder: cat.sortOrder,
       iconUrl,
       colorPrimary: cat.colorPrimary,
