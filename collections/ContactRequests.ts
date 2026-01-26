@@ -25,6 +25,10 @@ export const ContactRequests: CollectionConfig = {
       required: true,
     },
     {
+      name: 'subject',
+      type: 'text',
+    },
+    {
       name: 'message',
       type: 'textarea',
       required: true,
