@@ -178,6 +178,7 @@ export async function POST(
             quantity: 1,
           }] : []),
         ],
+        automatic_tax: { enabled: true },
         customer_email: customRequest.customerEmail,
         metadata: {
           orderId: order.id,
