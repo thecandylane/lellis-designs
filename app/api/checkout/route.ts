@@ -185,6 +185,7 @@ export async function POST(request: NextRequest) {
       mode: 'payment',
       customer_email: email,
       line_items: allLineItems,
+      automatic_tax: { enabled: true },
       metadata: {
         email,
         neededByDate,
