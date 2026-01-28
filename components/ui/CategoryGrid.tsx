@@ -7,6 +7,7 @@ type CategoryInfo = {
   href: string
   subcategoryCount?: number
   buttonCount?: number
+  previewImage?: string | null
 }
 
 type CategoryGridProps = {
@@ -34,13 +35,14 @@ export default function CategoryGrid({
       "w-full flex flex-wrap justify-center lg:justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-8",
       className
     )}>
-      {categories.map(({ category, href, subcategoryCount, buttonCount }) => (
+      {categories.map(({ category, href, subcategoryCount, buttonCount, previewImage }) => (
         <CategoryCard
           key={category.id}
           category={category}
           href={href}
           subcategoryCount={subcategoryCount}
           buttonCount={buttonCount}
+          previewImage={previewImage}
         />
       ))}
     </div>

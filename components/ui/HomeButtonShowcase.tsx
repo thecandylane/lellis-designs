@@ -49,8 +49,8 @@ export default function HomeButtonShowcase({ buttons }: Props) {
           </div>
         ) : (
           <div className="relative">
-            {/* Desktop Grid */}
-            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {/* Desktop Flex Layout */}
+            <div className="hidden md:flex md:flex-wrap md:justify-center gap-8 md:gap-10">
               {buttons.slice(0, 10).map((button, index) => (
                 <div
                   key={button.id}
@@ -76,7 +76,7 @@ export default function HomeButtonShowcase({ buttons }: Props) {
                 {buttons.map((button) => (
                   <div
                     key={button.id}
-                    className="flex-shrink-0 w-[70vw] max-w-[280px] snap-center"
+                    className="flex-shrink-0 w-[45vw] max-w-[200px] snap-center"
                   >
                     <ButtonCard
                       button={button}

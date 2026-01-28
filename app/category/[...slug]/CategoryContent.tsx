@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { LayoutGrid, Grid3X3, Grid2X2 } from 'lucide-react'
 import type { Button } from '@/lib/types'
 import ButtonCard from '@/components/ui/ButtonCard'
 import ButtonModal from '@/components/ui/ButtonModal'
@@ -12,28 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 
 type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
-type GridDensity = 'compact' | 'standard' | 'large'
 
 type Props = {
   buttons: Button[]
   accentColor?: string
 }
 
-const gridClasses: Record<GridDensity, string> = {
-  compact: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-  standard: 'grid-cols-2 md:grid-cols-3',
-  large: 'grid-cols-2',
-}
-
 export default function CategoryContent({ buttons, accentColor }: Props) {
   const [selectedButton, setSelectedButton] = useState<Button | null>(null)
   const [sortOption, setSortOption] = useState<SortOption>('name-asc')
-  const [gridDensity, setGridDensity] = useState<GridDensity>('compact')
-
-  const color = accentColor || '#461D7C'
 
   const sortedButtons = useMemo(() => {
     const sorted = [...buttons]
@@ -55,17 +43,10 @@ export default function CategoryContent({ buttons, accentColor }: Props) {
     return <p className="text-muted-foreground">No buttons available in this category yet.</p>
   }
 
-  const densityButtons: { value: GridDensity; icon: typeof LayoutGrid; label: string }[] = [
-    { value: 'compact', icon: LayoutGrid, label: 'Compact (4 columns)' },
-    { value: 'standard', icon: Grid3X3, label: 'Standard (3 columns)' },
-    { value: 'large', icon: Grid2X2, label: 'Large (2 columns)' },
-  ]
-
   return (
     <>
       {/* Toolbar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-card p-3">
-        {/* Sort dropdown */}
+      <div className="mb-6 flex items-center gap-4 rounded-lg border border-border bg-card p-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Sort:</span>
           <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
@@ -80,31 +61,10 @@ export default function CategoryContent({ buttons, accentColor }: Props) {
             </SelectContent>
           </Select>
         </div>
-
-        {/* Grid density toggle - hidden on mobile */}
-        <div className="hidden items-center gap-1 md:flex">
-          <span className="mr-2 text-sm text-muted-foreground">View:</span>
-          {densityButtons.map(({ value, icon: Icon, label }) => (
-            <button
-              key={value}
-              onClick={() => setGridDensity(value)}
-              title={label}
-              className={cn(
-                'rounded-md p-2 transition-colors',
-                gridDensity === value
-                  ? 'text-white'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              )}
-              style={gridDensity === value ? { backgroundColor: color } : undefined}
-            >
-              <Icon className="h-5 w-5" />
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Product grid */}
-      <div className={cn('grid gap-6', gridClasses[gridDensity])}>
+      {/* Product circle layout */}
+      <div className="flex flex-wrap justify-center gap-6 sm:gap-8 md:gap-10">
         {sortedButtons.map((button) => (
           <ButtonCard
             key={button.id}

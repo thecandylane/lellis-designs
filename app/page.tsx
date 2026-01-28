@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { getRootCategories, getSubcategoryCount, getButtonCount } from '@/lib/categories'
+import { getRootCategories, getSubcategoryCount, getButtonCount, getRandomButtonImagesForCategories } from '@/lib/categories'
 import { getPayload } from '@/lib/payload'
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import HeroBallpit from '@/components/ui/HeroBallpit'
@@ -18,6 +18,7 @@ type CategoryWithCounts = {
   href: string
   subcategoryCount: number
   buttonCount: number
+  previewImage?: string | null
 }
 
 export default async function HomePage() {
@@ -28,21 +29,26 @@ export default async function HomePage() {
   try {
     rootCategories = await getRootCategories()
 
-    // Get counts for each root category
-    categoriesWithCounts = await Promise.all(
-      rootCategories.map(async (category) => {
+    // Get counts and preview images for each root category
+    const categoryIds = rootCategories.map(c => c.id)
+    const [previewImages, ...countsResults] = await Promise.all([
+      getRandomButtonImagesForCategories(categoryIds),
+      ...rootCategories.map(async (category) => {
         const [subcategoryCount, buttonCount] = await Promise.all([
           getSubcategoryCount(category.id),
           getButtonCount(category.id)
         ])
-        return {
-          category,
-          href: `/category/${category.slug}`,
-          subcategoryCount,
-          buttonCount
-        }
+        return { subcategoryCount, buttonCount }
       })
-    )
+    ])
+
+    categoriesWithCounts = rootCategories.map((category, i) => ({
+      category,
+      href: `/category/${category.slug}`,
+      subcategoryCount: countsResults[i].subcategoryCount,
+      buttonCount: countsResults[i].buttonCount,
+      previewImage: previewImages.get(category.id) ?? null,
+    }))
   } catch (error) {
     // Database not initialized yet - show empty state
     console.error('Database initialization pending:', error)
@@ -190,7 +196,7 @@ export default async function HomePage() {
             </p>
           </div>
           <CategoryGrid
-            categories={categoriesWithCounts}
+            categories={categoriesWithCounts.filter(c => c.subcategoryCount > 0 || c.buttonCount > 0)}
             emptyMessage="No categories available yet. Check back soon!"
           />
         </div>
