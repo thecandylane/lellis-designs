@@ -235,6 +235,172 @@ export function getCategoryPath(category: CategoryWithAncestors): string {
 }
 
 /**
+ * Get a random button image URL for a single category
+ */
+export async function getRandomButtonImageForCategory(categoryId: string): Promise<string | null> {
+  const payload = await getPayload()
+
+  const { docs } = await payload.find({
+    collection: 'buttons',
+    where: {
+      category: { equals: categoryId },
+      active: { equals: true },
+    },
+    limit: 10,
+  })
+
+  if (docs.length === 0) return null
+
+  const picked = docs[Math.floor(Math.random() * docs.length)]
+  const image = (picked as { image?: { url?: string | null } | string | null }).image
+  if (typeof image === 'object' && image?.url) return image.url
+  return null
+}
+
+/**
+ * Get random button image URLs for multiple categories in a single batch query
+ * Returns a Map of categoryId -> imageUrl (or null)
+ */
+export async function getRandomButtonImagesForCategories(
+  categoryIds: string[]
+): Promise<Map<string, string | null>> {
+  const result = new Map<string, string | null>()
+  if (categoryIds.length === 0) return result
+
+  const payload = await getPayload()
+
+  // --- Pass 1: query buttons directly assigned to each category ---
+  const { docs } = await payload.find({
+    collection: 'buttons',
+    where: {
+      category: { in: categoryIds },
+      active: { equals: true },
+    },
+    limit: 500,
+  })
+
+  // Group buttons by category
+  const grouped = new Map<string, string[]>()
+  for (const doc of docs) {
+    const raw = doc as { category?: { id?: string | number } | string | number; image?: { url?: string | null } | string | null }
+    const catId = typeof raw.category === 'object' && raw.category?.id
+      ? String(raw.category.id)
+      : raw.category ? String(raw.category) : null
+    if (!catId) continue
+
+    const imageUrl = typeof raw.image === 'object' && raw.image?.url ? raw.image.url : null
+    if (!imageUrl) continue
+
+    if (!grouped.has(catId)) grouped.set(catId, [])
+    grouped.get(catId)!.push(imageUrl)
+  }
+
+  // Pick a random image from each category's direct buttons
+  const missingIds: string[] = []
+  for (const categoryId of categoryIds) {
+    const images = grouped.get(categoryId)
+    if (images && images.length > 0) {
+      result.set(categoryId, images[Math.floor(Math.random() * images.length)])
+    } else {
+      missingIds.push(categoryId)
+    }
+  }
+
+  // --- Pass 2: inherit images from descendant subcategories ---
+  if (missingIds.length > 0) {
+    // Fetch all active categories to build the parent→children map
+    const { docs: allCatDocs } = await payload.find({
+      collection: 'categories',
+      where: { active: { equals: true } },
+      sort: 'sortOrder',
+      limit: 1000,
+    })
+
+    const parentToChildren = new Map<string, string[]>()
+    for (const doc of allCatDocs) {
+      const cat = doc as unknown as PayloadCategory
+      const parentId = typeof cat.parent === 'object'
+        ? cat.parent?.id ? String(cat.parent.id) : null
+        : cat.parent ? String(cat.parent) : null
+      if (parentId) {
+        if (!parentToChildren.has(parentId)) parentToChildren.set(parentId, [])
+        parentToChildren.get(parentId)!.push(String(cat.id))
+      }
+    }
+
+    // Recursively collect all descendant IDs for a category
+    function getDescendantIds(catId: string): string[] {
+      const children = parentToChildren.get(catId)
+      if (!children) return []
+      const descendants: string[] = [...children]
+      for (const childId of children) {
+        descendants.push(...getDescendantIds(childId))
+      }
+      return descendants
+    }
+
+    // Build a map of missing category → its descendant IDs
+    const missingToDescendants = new Map<string, string[]>()
+    const allDescendantIds = new Set<string>()
+    for (const catId of missingIds) {
+      const descendants = getDescendantIds(catId)
+      missingToDescendants.set(catId, descendants)
+      for (const d of descendants) allDescendantIds.add(d)
+    }
+
+    if (allDescendantIds.size > 0) {
+      // Batch-query buttons for all descendant categories at once
+      const { docs: descendantDocs } = await payload.find({
+        collection: 'buttons',
+        where: {
+          category: { in: Array.from(allDescendantIds) },
+          active: { equals: true },
+        },
+        limit: 500,
+      })
+
+      // Group descendant buttons by category
+      const descendantGrouped = new Map<string, string[]>()
+      for (const doc of descendantDocs) {
+        const raw = doc as { category?: { id?: string | number } | string | number; image?: { url?: string | null } | string | null }
+        const catId = typeof raw.category === 'object' && raw.category?.id
+          ? String(raw.category.id)
+          : raw.category ? String(raw.category) : null
+        if (!catId) continue
+
+        const imageUrl = typeof raw.image === 'object' && raw.image?.url ? raw.image.url : null
+        if (!imageUrl) continue
+
+        if (!descendantGrouped.has(catId)) descendantGrouped.set(catId, [])
+        descendantGrouped.get(catId)!.push(imageUrl)
+      }
+
+      // For each missing category, pool images from all its descendants
+      for (const catId of missingIds) {
+        const descendants = missingToDescendants.get(catId) || []
+        const pooledImages: string[] = []
+        for (const descId of descendants) {
+          const imgs = descendantGrouped.get(descId)
+          if (imgs) pooledImages.push(...imgs)
+        }
+        if (pooledImages.length > 0) {
+          result.set(catId, pooledImages[Math.floor(Math.random() * pooledImages.length)])
+        } else {
+          result.set(catId, null)
+        }
+      }
+    } else {
+      // No descendants found, set null for all missing
+      for (const catId of missingIds) {
+        result.set(catId, null)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
  * Count buttons in a category
  */
 export async function getButtonCount(categoryId: string): Promise<number> {

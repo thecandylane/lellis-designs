@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getPayload } from '@/lib/payload'
-import { getCategoryByPath, getChildCategories, buildBreadcrumbs, getSubcategoryCount, getButtonCount } from '@/lib/categories'
+import { getCategoryByPath, getChildCategories, buildBreadcrumbs, getSubcategoryCount, getButtonCount, getRandomButtonImagesForCategories } from '@/lib/categories'
 import type { Button, CategoryWithAncestors } from '@/lib/types'
 import CategoryBreadcrumb from '@/components/ui/CategoryBreadcrumb'
 import CategoryGrid from '@/components/ui/CategoryGrid'
@@ -133,26 +133,35 @@ export default async function CategoryPage({ params }: Props) {
   // Build the current category path for child links
   const basePath = `/category/${slug.join('/')}`
 
-  // Get counts for each child category
-  const childCategoriesWithCounts = await Promise.all(
-    childCategories.map(async (child) => {
+  // Get counts and preview images for each child category
+  const childIds = childCategories.map(c => c.id)
+  const [childPreviewImages, ...childCountsResults] = await Promise.all([
+    getRandomButtonImagesForCategories(childIds),
+    ...childCategories.map(async (child) => {
       const [subcategoryCount, buttonCount] = await Promise.all([
         getSubcategoryCount(child.id),
         getButtonCount(child.id)
       ])
-      return {
-        category: child,
-        href: `${basePath}/${child.slug}`,
-        subcategoryCount,
-        buttonCount
-      }
+      return { subcategoryCount, buttonCount }
     })
-  )
+  ])
+
+  const childCategoriesWithCounts = childCategories.map((child, i) => ({
+    category: child,
+    href: `${basePath}/${child.slug}`,
+    subcategoryCount: childCountsResults[i].subcategoryCount,
+    buttonCount: childCountsResults[i].buttonCount,
+    previewImage: childPreviewImages.get(child.id) ?? null,
+  }))
 
   // Build breadcrumbs
   const breadcrumbs = buildBreadcrumbs(category)
 
-  const hasSubcategories = childCategories.length > 0
+  const nonEmptyChildren = childCategoriesWithCounts.filter(
+    c => c.subcategoryCount > 0 || c.buttonCount > 0
+  )
+
+  const hasSubcategories = nonEmptyChildren.length > 0
   const hasButtons = buttons.length > 0
 
   return (
@@ -222,7 +231,7 @@ export default async function CategoryPage({ params }: Props) {
                   color: textOnPrimary,
                 }}
               >
-                {childCategories.length} subcategories
+                {nonEmptyChildren.length} subcategories
               </span>
             )}
             {hasButtons && (
@@ -252,7 +261,7 @@ export default async function CategoryPage({ params }: Props) {
               Browse {category.name}
             </h2>
             <CategoryGrid
-              categories={childCategoriesWithCounts}
+              categories={nonEmptyChildren}
               accentColor={colors.primary}
             />
           </section>

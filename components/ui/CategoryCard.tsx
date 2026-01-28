@@ -10,16 +10,21 @@ type CategoryCardProps = {
   buttonCount?: number
   className?: string
   accentColor?: string
+  previewImage?: string | null
 }
 
 export default function CategoryCard({
   category,
   href,
   className,
+  previewImage,
 }: CategoryCardProps) {
   // Use category's own colors if available, otherwise use defaults
   const primaryColor = category.color_primary || '#461D7C'
   const secondaryColor = category.color_secondary || '#FDD023'
+
+  // Image priority: previewImage (random button) > category.icon > gradient fallback
+  const displayImage = previewImage || category.icon
 
   return (
     <Link
@@ -36,9 +41,9 @@ export default function CategoryCard({
 
         {/* Circular button shape - Much larger now */}
         <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-full overflow-hidden border-4 border-white shadow-lg group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-2xl transition-all duration-300 ease-out">
-          {category.icon ? (
+          {displayImage ? (
             <Image
-              src={category.icon}
+              src={displayImage}
               alt={category.name}
               fill
               className="object-cover"
