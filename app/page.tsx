@@ -57,13 +57,35 @@ export default async function HomePage() {
   // Fetch all active buttons for the showcase
   try {
     const payload = await getPayload()
-    const { docs: buttons } = await payload.find({
+    // Fetch featured buttons separately to ensure they're included
+    const { docs: featuredButtons } = await payload.find({
+      collection: 'buttons',
+      where: {
+        and: [
+          { featured: { equals: true } },
+          { active: { equals: true } },
+        ],
+      },
+      sort: 'sortOrder',
+      limit: 20,
+      depth: 1,
+    })
+
+    // Fetch remaining active buttons
+    const { docs: regularButtons } = await payload.find({
       collection: 'buttons',
       where: { active: { equals: true } },
       sort: 'sortOrder',
       limit: 100,
       depth: 1,
     })
+
+    // Combine and deduplicate (featured buttons first)
+    const featuredIds = new Set(featuredButtons.map(b => b.id))
+    const buttons = [
+      ...featuredButtons,
+      ...regularButtons.filter(b => !featuredIds.has(b.id))
+    ]
 
     // Map Payload buttons to our Button type
     allButtons = buttons.map((b) => ({
