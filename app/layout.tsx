@@ -13,7 +13,8 @@ if (typeof window === 'undefined') {
   validateEnvOrThrow();
 }
 
-export const dynamic = 'force-dynamic';
+// Enable ISR with 5-minute revalidation for theme settings
+export const revalidate = 300
 
 const questrial = Questrial({
   variable: "--font-sans",

@@ -6,7 +6,8 @@ import CategoryBreadcrumb from '@/components/ui/CategoryBreadcrumb'
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import CategoryContent from './CategoryContent'
 
-export const dynamic = 'force-dynamic'
+// Enable ISR with 60-second revalidation for category pages
+export const revalidate = 60
 
 type Props = {
   params: Promise<{ slug: string[] }>
