@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import type { CartItem } from '@/lib/types'
 import { getPayload } from '@/lib/payload'
+import { checkRateLimit, checkoutRateLimiter } from '@/lib/security'
 
 type ShippingMethod = 'pickup' | 'ups'
 
@@ -76,6 +77,14 @@ function validateEmail(email: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = checkRateLimit(request, checkoutRateLimiter)
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: rateLimitResult.error },
+      { status: 429, headers: { 'Retry-After': String(rateLimitResult.retryAfter) } }
+    )
+  }
+
   try {
     const body: CheckoutRequest = await request.json()
     const { items, email, neededByDate, shippingMethod = 'pickup' } = body

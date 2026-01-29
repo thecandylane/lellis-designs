@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { escapeHtml } from './security'
 
 // Lazy-load Resend client to avoid build-time evaluation
 let resendInstance: Resend | null = null
@@ -62,15 +63,15 @@ function formatDate(dateStr: string): string {
 function generateItemsHtml(items: OrderItem[]): string {
   return items.map(item => {
     const customizations = [
-      item.personName && `Name: ${item.personName}`,
-      item.personNumber && `Number/Class: ${item.personNumber}`,
-      item.notes && `Notes: ${item.notes}`,
+      item.personName && `Name: ${escapeHtml(item.personName)}`,
+      item.personNumber && `Number/Class: ${escapeHtml(item.personNumber)}`,
+      item.notes && `Notes: ${escapeHtml(item.notes)}`,
     ].filter(Boolean).join('<br>')
 
     return `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #eee;">
-          <strong>${item.name}</strong>
+          <strong>${escapeHtml(item.name)}</strong>
           ${customizations ? `<br><span style="color: #666; font-size: 14px;">${customizations}</span>` : ''}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
@@ -186,10 +187,10 @@ export async function sendAdminOrderNotification(data: OrderEmailData) {
         ${items.map(item => `
           <tr>
             <td style="padding: 8px; border-bottom: 1px solid #eee;">
-              <strong>${item.name}</strong> × ${item.quantity}
-              ${item.personName ? `<br>Name: ${item.personName}` : ''}
-              ${item.personNumber ? `<br>Number: ${item.personNumber}` : ''}
-              ${item.notes ? `<br>Notes: ${item.notes}` : ''}
+              <strong>${escapeHtml(item.name)}</strong> × ${item.quantity}
+              ${item.personName ? `<br>Name: ${escapeHtml(item.personName)}` : ''}
+              ${item.personNumber ? `<br>Number: ${escapeHtml(item.personNumber)}` : ''}
+              ${item.notes ? `<br>Notes: ${escapeHtml(item.notes)}` : ''}
             </td>
           </tr>
         `).join('')}
@@ -339,17 +340,17 @@ export async function sendAdminContactNotification(data: {
       <h1 style="color: #0D9488;">${subjectLabel}</h1>
 
       <div style="background: #f0fdfa; border: 1px solid #0D9488; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-        <p style="margin: 0;"><strong>From:</strong> ${name}</p>
-        <p style="margin: 8px 0 0 0;"><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+        <p style="margin: 0;"><strong>From:</strong> ${escapeHtml(name)}</p>
+        <p style="margin: 8px 0 0 0;"><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
       </div>
 
       <h2 style="margin-top: 0;">Message</h2>
-      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">${message}</div>
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(message)}</div>
 
       <p style="margin-top: 24px;">
-        <a href="mailto:${email}?subject=Re: Your message to L. Ellis Designs"
+        <a href="mailto:${escapeHtml(email)}?subject=Re: Your message to L. Ellis Designs"
            style="background: #0D9488; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-          Reply to ${name}
+          Reply to ${escapeHtml(name)}
         </a>
       </p>
 
@@ -396,13 +397,13 @@ export async function sendCustomerQuote(data: {
 
       <div style="padding: 32px; background: #fff;">
         <p style="font-size: 16px; color: #333;">
-          Hi ${firstName}! We've prepared a quote for your custom button order.
+          Hi ${escapeHtml(firstName)}! We've prepared a quote for your custom button order.
         </p>
 
         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 24px 0;">
           <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">Order Summary</h2>
           <p style="margin: 8px 0;"><strong>Quantity:</strong> ${quantity} buttons</p>
-          <p style="margin: 8px 0;"><strong>Description:</strong> ${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
+          <p style="margin: 8px 0;"><strong>Description:</strong> ${escapeHtml(description.substring(0, 200))}${description.length > 200 ? '...' : ''}</p>
           ${neededByDate ? `<p style="margin: 8px 0;"><strong>Needed By:</strong> ${formatDate(neededByDate)}</p>` : ''}
           <p style="margin: 8px 0;"><strong>Delivery:</strong> ${shippingMethod === 'ups' ? 'UPS Shipping' : 'Local Pickup'}</p>
         </div>
@@ -483,7 +484,7 @@ export async function sendPaymentLink(data: {
 
       <div style="padding: 32px; background: #fff;">
         <p style="font-size: 16px; color: #333;">
-          Hi ${firstName}! Here's your payment link for your custom button order.
+          Hi ${escapeHtml(firstName)}! Here's your payment link for your custom button order.
         </p>
 
         <div style="background: #eff6ff; border: 1px solid #3b82f6; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
@@ -547,13 +548,13 @@ export async function sendQuoteNotification(data: {
 
       <div style="padding: 32px; background: #fff;">
         <p style="font-size: 16px; color: #333;">
-          Hi ${firstName}! Thank you for your custom button request. We've prepared a quote for you.
+          Hi ${escapeHtml(firstName)}! Thank you for your custom button request. We've prepared a quote for you.
         </p>
 
         <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 24px 0;">
           <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #333;">Order Summary</h2>
           <p style="margin: 8px 0;"><strong>Quantity:</strong> ${quantity} buttons</p>
-          <p style="margin: 8px 0;"><strong>Description:</strong> ${description.substring(0, 200)}${description.length > 200 ? '...' : ''}</p>
+          <p style="margin: 8px 0;"><strong>Description:</strong> ${escapeHtml(description.substring(0, 200))}${description.length > 200 ? '...' : ''}</p>
           ${neededByDate ? `<p style="margin: 8px 0;"><strong>Needed By:</strong> ${formatDate(neededByDate)}</p>` : ''}
         </div>
 
@@ -629,7 +630,7 @@ export async function sendProductionStartedEmail(data: {
 
       <div style="padding: 32px; background: #fff;">
         <p style="font-size: 16px; color: #333;">
-          Hi ${firstName}! Great news - we've started working on your custom buttons.
+          Hi ${escapeHtml(firstName)}! Great news - we've started working on your custom buttons.
         </p>
 
         <div style="background: #eff6ff; border: 1px solid #3b82f6; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
@@ -677,7 +678,7 @@ export async function sendOrderCompletedEmail(data: {
 
       <div style="padding: 32px; background: #fff;">
         <p style="font-size: 16px; color: #333;">
-          Hi ${firstName}! We hope you love your custom buttons!
+          Hi ${escapeHtml(firstName)}! We hope you love your custom buttons!
         </p>
 
         <div style="background: #f0fdf4; border: 1px solid #22c55e; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center;">
@@ -740,13 +741,13 @@ export async function sendAdminCustomRequestNotification(data: {
       </div>
 
       <h2 style="margin-top: 0;">Customer Info</h2>
-      <p><strong>Name:</strong> ${customerName}</p>
-      <p><strong>Email:</strong> <a href="mailto:${customerEmail}">${customerEmail}</a></p>
-      <p><strong>Phone:</strong> <a href="tel:${customerPhone}">${customerPhone}</a></p>
+      <p><strong>Name:</strong> ${escapeHtml(customerName)}</p>
+      <p><strong>Email:</strong> <a href="mailto:${escapeHtml(customerEmail)}">${escapeHtml(customerEmail)}</a></p>
+      <p><strong>Phone:</strong> <a href="tel:${escapeHtml(customerPhone)}">${escapeHtml(customerPhone)}</a></p>
 
       <h2>Request Details</h2>
-      ${eventType ? `<p><strong>Event Type:</strong> ${eventType}</p>` : ''}
-      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${description}</div>
+      ${eventType ? `<p><strong>Event Type:</strong> ${escapeHtml(eventType)}</p>` : ''}
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${escapeHtml(description)}</div>
 
       <p style="margin-top: 24px;">
         <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/admin/requests"
