@@ -111,7 +111,7 @@ export default function PastRequestsSection({ requests }: PastRequestsSectionPro
         return (
           <div
             key={request.id}
-            className="bg-card rounded-xl shadow-sm border border-border overflow-hidden"
+            className="bg-card rounded-xl shadow-sm border border-border"
           >
             {/* Collapsed Header - Always visible, clickable */}
             <div

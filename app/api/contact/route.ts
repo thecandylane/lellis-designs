@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendAdminContactNotification } from '@/lib/email'
 import { getPayload } from '@/lib/payload'
+import { checkRateLimit, contactRateLimiter } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = checkRateLimit(request, contactRateLimiter)
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: rateLimitResult.error },
+      { status: 429, headers: { 'Retry-After': String(rateLimitResult.retryAfter) } }
+    )
+  }
+
   try {
     const body = await request.json()
 

@@ -6,6 +6,12 @@ import Header from "@/components/ui/Header";
 import AmbassadorTracker from "@/components/AmbassadorTracker";
 import { getThemeSettings } from "@/lib/theme";
 import { getPayload } from "@/lib/payload";
+import { validateEnvOrThrow } from "@/lib/env";
+
+// Validate environment variables at startup (server-side only)
+if (typeof window === 'undefined') {
+  validateEnvOrThrow();
+}
 
 export const dynamic = 'force-dynamic';
 

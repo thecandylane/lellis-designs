@@ -64,6 +64,7 @@ export const CustomRequests: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'new',
+      index: true, // Index for faster status-based filtering in admin
       options: [
         { label: 'New', value: 'new' },
         { label: 'Contacted', value: 'contacted' },

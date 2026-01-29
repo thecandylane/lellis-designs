@@ -32,6 +32,7 @@ export const Buttons: CollectionConfig = {
       relationTo: 'categories',
       required: false, // Allow uncategorized buttons for flexibility
       hasMany: false,
+      index: true, // Index for faster category-based queries
       admin: {
         description: 'Category for this button. Leave empty for uncategorized.',
       },

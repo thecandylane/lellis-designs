@@ -1,24 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import type { PricingConfig } from './pricing'
+import { DEFAULT_PRICING, getPricePerButton, getNextTierInfo } from './pricing'
 
-export type PricingConfig = {
-  singlePrice: number
-  tier1Price: number
-  tier1Threshold: number
-  tier2Price: number
-  tier2Threshold: number
-  shippingCost: number
-}
-
-const DEFAULT_PRICING: PricingConfig = {
-  singlePrice: 5,
-  tier1Price: 4.5,
-  tier1Threshold: 100,
-  tier2Price: 4,
-  tier2Threshold: 200,
-  shippingCost: 8,
-}
+// Re-export for backward compatibility
+export type { PricingConfig }
+export { getPricePerButton, getNextTierInfo }
 
 // Cache pricing to avoid refetching on every component mount
 let cachedPricing: PricingConfig | null = null
@@ -66,23 +54,4 @@ export function usePricing() {
   }, [])
 
   return { pricing, loading, error }
-}
-
-// Calculate price per button based on total quantity
-export function getPricePerButton(quantity: number, pricing: PricingConfig): number {
-  if (quantity >= pricing.tier2Threshold) return pricing.tier2Price
-  if (quantity >= pricing.tier1Threshold) return pricing.tier1Price
-  return pricing.singlePrice
-}
-
-// Get the next discount tier info (for UI messaging)
-export function getNextTierInfo(
-  quantity: number,
-  pricing: PricingConfig
-): { threshold: number; price: number } | null {
-  if (quantity >= pricing.tier2Threshold) return null // Already at best price
-  if (quantity >= pricing.tier1Threshold) {
-    return { threshold: pricing.tier2Threshold, price: pricing.tier2Price }
-  }
-  return { threshold: pricing.tier1Threshold, price: pricing.tier1Price }
 }

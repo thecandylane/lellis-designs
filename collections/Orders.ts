@@ -83,6 +83,7 @@ export const Orders: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'pending',
+      index: true, // Index for faster status-based queries and filtering
       options: [
         { label: 'Pending', value: 'pending' },
         { label: 'Paid', value: 'paid' },

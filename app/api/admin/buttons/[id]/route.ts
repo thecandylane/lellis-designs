@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { BUTTON_ALLOWED_FIELDS, filterToAllowedFields } from '@/lib/validation/field-whitelists'
 
 type Params = Promise<{ id: string }>
 
@@ -18,10 +19,13 @@ export async function PATCH(
     const body = await request.json()
     const payload = await getPayload()
 
+    // Filter to only allowed fields to prevent field injection
+    const updateData = filterToAllowedFields(body, BUTTON_ALLOWED_FIELDS)
+
     await payload.update({
       collection: 'buttons',
       id,
-      data: body,
+      data: updateData,
     })
 
     return NextResponse.json({ success: true })
