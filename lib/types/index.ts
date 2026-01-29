@@ -35,7 +35,7 @@ export type Button = {
   description: string | null
   tags: { tag: string }[] | null
   image_url: string
-  price: number
+  price?: number | null
   lead_time_days: number
   customization: 'as_is' | 'customizable'
   active: boolean

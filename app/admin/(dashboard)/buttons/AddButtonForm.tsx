@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, X, Upload, Loader2 } from 'lucide-react'
-import { usePricing } from '@/lib/usePricing'
 
 type Category = {
   id: string
@@ -17,7 +16,6 @@ type Props = {
 
 export default function AddButtonForm({ categories }: Props) {
   const router = useRouter()
-  const { pricing } = usePricing()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showModal, setShowModal] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -26,13 +24,8 @@ export default function AddButtonForm({ categories }: Props) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: String(pricing.singlePrice),
     categoryId: '',
   })
-
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, price: String(pricing.singlePrice) }))
-  }, [pricing.singlePrice])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -79,7 +72,7 @@ export default function AddButtonForm({ categories }: Props) {
         // We'd need to update after creation if price differs
 
         setShowModal(false)
-        setFormData({ name: '', description: '', price: String(pricing.singlePrice), categoryId: '' })
+        setFormData({ name: '', description: '', categoryId: '' })
         setFile(null)
         setPreview(null)
         router.refresh()
@@ -95,7 +88,7 @@ export default function AddButtonForm({ categories }: Props) {
   }
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', price: String(pricing.singlePrice), categoryId: '' })
+    setFormData({ name: '', description: '', categoryId: '' })
     setFile(null)
     setPreview(null)
     setShowModal(false)
@@ -227,21 +220,6 @@ export default function AddButtonForm({ categories }: Props) {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
                   placeholder="Optional description..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              {/* Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price ($)
-                </label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  min="0"
-                  step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>

@@ -27,7 +27,7 @@ type PayloadButton = {
   description?: string | null
   image?: { url?: string } | string | null
   category?: { id: string; name: string } | string | null
-  price: number
+  price?: number | null
   active: boolean
   sortOrder: number
   createdAt: string

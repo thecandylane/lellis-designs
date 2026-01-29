@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
+type SortOption = 'name-asc' | 'name-desc'
 
 type Props = {
   buttons: Button[]
@@ -30,10 +30,6 @@ export default function CategoryContent({ buttons, accentColor }: Props) {
         return sorted.sort((a, b) => a.name.localeCompare(b.name))
       case 'name-desc':
         return sorted.sort((a, b) => b.name.localeCompare(a.name))
-      case 'price-asc':
-        return sorted.sort((a, b) => a.price - b.price)
-      case 'price-desc':
-        return sorted.sort((a, b) => b.price - a.price)
       default:
         return sorted
     }
@@ -56,8 +52,6 @@ export default function CategoryContent({ buttons, accentColor }: Props) {
             <SelectContent>
               <SelectItem value="name-asc">Name A-Z</SelectItem>
               <SelectItem value="name-desc">Name Z-A</SelectItem>
-              <SelectItem value="price-asc">Price Low-High</SelectItem>
-              <SelectItem value="price-desc">Price High-Low</SelectItem>
             </SelectContent>
           </Select>
         </div>

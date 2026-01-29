@@ -73,7 +73,7 @@ export default async function HomePage() {
       description: b.description || null,
       tags: null,
       image_url: typeof b.image === 'object' && b.image?.url ? b.image.url : '/placeholder.png',
-      price: b.price,
+      price: b.price ?? null,
       lead_time_days: 0,
       customization: 'as_is' as const,
       active: b.active,

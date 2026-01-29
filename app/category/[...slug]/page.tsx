@@ -19,7 +19,7 @@ type PayloadButton = {
   description?: string | null
   image: { url?: string | null } | string
   category: { id: string | number } | string | number
-  price: number
+  price?: number | null
   leadTimeDays?: number | null
   customization?: 'as_is' | 'customizable' | null
   active?: boolean | null
@@ -40,7 +40,7 @@ function toButton(doc: PayloadButton): Button {
     tags: doc.tags || null,
     image_url: typeof doc.image === 'object' ? doc.image?.url || '' : '',
     category_id: categoryId,
-    price: doc.price,
+    price: doc.price ?? null,
     lead_time_days: doc.leadTimeDays ?? 7,
     customization: doc.customization || 'as_is',
     active: doc.active ?? true,
