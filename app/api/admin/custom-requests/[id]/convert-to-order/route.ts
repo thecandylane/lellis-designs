@@ -3,6 +3,7 @@ import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
 import { getStripe } from '@/lib/stripe'
 import { sendCustomerQuote } from '@/lib/email'
+import { apiError } from '@/lib/api-response'
 
 type Params = Promise<{ id: string }>
 
@@ -111,31 +112,44 @@ export async function POST(
     notes: `Custom request converted to order.\n${rushFee > 0 ? `Rush fee: $${rushFee}\n` : ''}${customRequest.adminSection?.notes || ''}`,
   }
 
+  // Create order and update request atomically to prevent orphaned orders
   let order
   try {
+    // Step 1: Create the order
     order = await payload.create({
       collection: 'orders',
       data: orderData,
     })
-  } catch (error) {
-    console.error('Error creating order:', error)
-    return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
-  }
 
-  // Update the custom request with the converted order ID
-  try {
-    await payload.update({
-      collection: 'custom-requests',
-      id,
-      data: {
-        convertedOrderId: order.id,
-        // If paid via non-stripe method, move to production
-        ...(paymentMethod !== 'stripe' && { status: 'production' }),
-      },
-    })
+    // Step 2: Update the custom request with the converted order ID
+    // If this fails, we need to clean up the order
+    try {
+      await payload.update({
+        collection: 'custom-requests',
+        id,
+        data: {
+          convertedOrderId: order.id,
+          // If paid via non-stripe method, move to production
+          ...(paymentMethod !== 'stripe' && { status: 'production' }),
+        },
+      })
+    } catch (updateError) {
+      // Rollback: Delete the order we just created
+      console.error('Failed to update custom request, rolling back order creation:', updateError)
+      try {
+        await payload.delete({
+          collection: 'orders',
+          id: order.id,
+        })
+      } catch (deleteError) {
+        console.error('Critical: Failed to rollback order creation:', deleteError)
+      }
+      throw updateError // Re-throw to trigger outer catch
+    }
   } catch (error) {
-    console.error('Error updating custom request:', error)
-    // Don't fail the request, the order was created successfully
+    return apiError('Failed to convert request to order', error, {
+      context: { requestId: id, paymentMethod }
+    })
   }
 
   // If Stripe payment, create a payment link

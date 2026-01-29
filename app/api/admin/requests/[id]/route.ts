@@ -43,7 +43,8 @@ export async function PATCH(
 
         const [parent, child] = parts
         const allowedChildren = ALLOWED_NESTED[parent as keyof typeof ALLOWED_NESTED]
-        if (!allowedChildren?.includes(child as any)) continue
+        // Type-safe check: allowedChildren is readonly array, child is string
+        if (!allowedChildren || !(allowedChildren as readonly string[]).includes(child)) continue
 
         // Validate numeric fields
         if (parent === 'adminSection' && (child === 'quotedPrice' || child === 'rushFee')) {
