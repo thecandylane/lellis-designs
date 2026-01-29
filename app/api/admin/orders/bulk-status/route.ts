@@ -58,8 +58,6 @@ export async function POST(request: NextRequest) {
       message: `${successCount} order${successCount !== 1 ? 's' : ''} marked as ${ORDER_STATUS_LABELS[status].label.toLowerCase()}`,
     })
   } catch (error) {
-    return apiError('Failed to update orders', error, {
-      context: { status, orderCount: body?.ids?.length }
-    })
+    return apiError('Failed to update orders', error)
   }
 }

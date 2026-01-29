@@ -41,8 +41,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    return apiError('Failed to reorder buttons', error, {
-      context: { itemCount: body?.items?.length }
-    })
+    return apiError('Failed to reorder buttons', error)
   }
 }
