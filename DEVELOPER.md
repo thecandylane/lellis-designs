@@ -4,7 +4,7 @@ Technical documentation for the L. Ellis Designs codebase.
 
 ## Project Overview
 
-L. Ellis Designs - An e-commerce site for custom 3" buttons. Louisiana-based business with pricing of $5 each or 5 for $20.
+L. Ellis Designs - An e-commerce site for custom 3" buttons. Baton Rouge-based business with pricing of $5 each or 5 for $20.
 
 ## Commands
 

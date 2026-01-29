@@ -1,6 +1,6 @@
 # L. Ellis Designs
 
-Custom 3" button e-commerce platform built for a Louisiana-based small business.
+Custom 3" button e-commerce platform built for a Baton Rouge-based small business.
 
 ## Features
 

@@ -58,7 +58,7 @@ export const Buttons: CollectionConfig = {
       defaultValue: 5,
       min: 0,
       admin: {
-        description: 'Price in dollars (default: $5)',
+        description: 'Price per button in dollars',
       },
     },
     {

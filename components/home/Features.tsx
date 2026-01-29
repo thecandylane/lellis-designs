@@ -13,7 +13,7 @@ const features = [
   {
     title: "Handcrafted with Love",
     description:
-      "Every button is carefully made in Louisiana with attention to detail and quality materials.",
+      "Every button is carefully made in Baton Rouge with attention to detail and quality materials.",
     icon: <Heart className="h-5 w-5" />,
     color: "bg-primary/10 text-primary",
   },
@@ -48,7 +48,7 @@ const features = [
   {
     title: "Flexible Delivery",
     description:
-      "Local pickup in Louisiana or fast UPS shipping anywhere in the country.",
+      "Local pickup in Baton Rouge or fast UPS shipping anywhere in the country.",
     icon: <Truck className="h-5 w-5" />,
     color: "bg-orange-500/10 text-orange-500",
   },
