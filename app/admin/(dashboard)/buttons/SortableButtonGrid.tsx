@@ -31,7 +31,7 @@ type PayloadButton = {
   description?: string | null
   image?: { url?: string } | string | null
   category?: { id: string; name: string } | string | null
-  price: number
+  price?: number | null
   active: boolean
   featured?: boolean
   sortOrder: number
@@ -307,7 +307,7 @@ function SortableButtonCard({ button, categories, isSelected, onToggleSelect }: 
             {categoryName || 'No category'}
           </span>
           <span className="text-sm font-medium text-foreground">
-            ${button.price.toFixed(2)}
+            {button.price != null ? `$${button.price.toFixed(2)}` : 'Default'}
           </span>
         </div>
 
@@ -319,7 +319,7 @@ function SortableButtonCard({ button, categories, isSelected, onToggleSelect }: 
             isFeatured={button.featured ?? false}
             buttonName={button.name}
             buttonDescription={button.description}
-            buttonPrice={button.price}
+            buttonPrice={button.price ?? undefined}
             buttonCategoryId={typeof button.category === 'object' ? button.category?.id : undefined}
             categories={categories}
           />

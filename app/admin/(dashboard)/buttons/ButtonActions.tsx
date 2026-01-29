@@ -26,7 +26,7 @@ export default function ButtonActions({
   isFeatured,
   buttonName,
   buttonDescription,
-  buttonPrice = 5,
+  buttonPrice,
   buttonCategoryId,
   categories = [],
 }: ButtonActionsProps) {
@@ -37,7 +37,7 @@ export default function ButtonActions({
   const [editData, setEditData] = useState({
     name: buttonName,
     description: buttonDescription || '',
-    price: buttonPrice,
+    priceOverride: buttonPrice != null ? String(buttonPrice) : '',
     category: buttonCategoryId || '',
   })
 
@@ -103,7 +103,7 @@ export default function ButtonActions({
         body: JSON.stringify({
           name: editData.name,
           description: editData.description || null,
-          price: editData.price,
+          price: editData.priceOverride !== '' ? parseFloat(editData.priceOverride) : null,
           category: editData.category || null,
         }),
       })
@@ -232,15 +232,17 @@ export default function ButtonActions({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price Override ($)</label>
                 <input
                   type="number"
-                  value={editData.price}
-                  onChange={(e) => setEditData({ ...editData, price: parseFloat(e.target.value) || 0 })}
+                  value={editData.priceOverride}
+                  onChange={(e) => setEditData({ ...editData, priceOverride: e.target.value })}
                   min="0"
                   step="0.01"
+                  placeholder="Leave empty for global price"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">Leave empty to use the price from site settings.</p>
               </div>
 
               {categories.length > 0 && (

@@ -54,11 +54,9 @@ export const Buttons: CollectionConfig = {
     {
       name: 'price',
       type: 'number',
-      required: true,
-      defaultValue: 5,
       min: 0,
       admin: {
-        description: 'Price per button in dollars',
+        description: 'Optional price override. Leave empty to use the global price from site settings.',
       },
     },
     {

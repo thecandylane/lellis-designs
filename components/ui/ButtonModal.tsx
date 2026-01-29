@@ -32,7 +32,7 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
       buttonId: button.id,
       name: button.name,
       imageUrl: button.image_url,
-      price: button.price,
+      price: button.price ?? pricing.singlePrice,
       quantity,
       ...(isCustomizable && personName ? { personName } : {}),
       ...(isCustomizable && personNumber ? { personNumber } : {}),

@@ -18,13 +18,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const payload = await getPayload()
 
-    // Fetch default price from site settings
-    let singlePrice = 5
-    try {
-      const settings = await payload.findGlobal({ slug: 'site-settings' })
-      singlePrice = settings.singlePrice ?? 5
-    } catch { /* fallback to default */ }
-
     // Get button metadata from form
     const buttonsJson = formData.get('buttons') as string
     const buttons: ButtonData[] = JSON.parse(buttonsJson)
@@ -68,7 +61,6 @@ export async function POST(request: NextRequest) {
             name: buttonData.name,
             image: media.id,
             category: categoryId,
-            price: singlePrice,
             active: true,
           },
         })
