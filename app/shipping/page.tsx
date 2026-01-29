@@ -1,8 +1,18 @@
 import Link from 'next/link'
 import { ArrowLeft, Package, Truck, MapPin, Clock } from 'lucide-react'
 import { Footer } from '@/components/home/Footer'
+import { getPayload } from '@/lib/payload'
 
-export default function ShippingPage() {
+export default async function ShippingPage() {
+  // Fetch shipping cost from settings
+  let shippingCost = 8 // Default fallback
+  try {
+    const payload = await getPayload()
+    const settings = await payload.findGlobal({ slug: 'site-settings' })
+    shippingCost = settings.shippingCost ?? 8
+  } catch (error) {
+    console.error('Failed to fetch site settings:', error)
+  }
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
@@ -33,7 +43,7 @@ export default function ShippingPage() {
                 <h3 className="font-medium text-foreground">UPS Ground Shipping</h3>
                 <p className="text-sm text-muted-foreground">Standard delivery within 3-5 business days</p>
               </div>
-              <span className="text-lg font-semibold text-primary">$8.00</span>
+              <span className="text-lg font-semibold text-primary">${shippingCost.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-start">
               <div>
