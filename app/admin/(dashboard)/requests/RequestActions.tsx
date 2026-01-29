@@ -16,6 +16,7 @@ import {
   ChevronDown,
   RotateCcw,
 } from 'lucide-react'
+import { usePricing } from '@/lib/usePricing'
 
 type RequestActionsProps = {
   requestId: string
@@ -72,6 +73,7 @@ export default function RequestActions({
   isPastRequest = false,
 }: RequestActionsProps) {
   const router = useRouter()
+  const { pricing } = usePricing()
   const [loading, setLoading] = useState(false)
   const [showQuoteForm, setShowQuoteForm] = useState(false)
   const [showOrderForm, setShowOrderForm] = useState(false)
@@ -412,7 +414,7 @@ export default function RequestActions({
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                UPS Shipping (+$8)
+                UPS Shipping (+${pricing.shippingCost})
               </button>
             </div>
           </div>

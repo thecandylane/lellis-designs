@@ -58,7 +58,7 @@ export const PRESET_THEMES: SeasonalTheme[] = [
     secondaryColor: '#FCD34D',
     accentColor: '#16A34A',
     heroStyle: 'ballpit',
-    description: 'Celebrate Mardi Gras season in Louisiana!',
+    description: 'Celebrate Mardi Gras season in Baton Rouge!',
   },
   {
     name: 'LSU Game Day',

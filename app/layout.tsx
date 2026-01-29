@@ -5,6 +5,7 @@ import "./globals.css";
 import Header from "@/components/ui/Header";
 import AmbassadorTracker from "@/components/AmbassadorTracker";
 import { getThemeSettings } from "@/lib/theme";
+import { getPayload } from "@/lib/payload";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,25 +20,36 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "L. Ellis Designs - Custom 3\" Buttons",
-  description: "Custom 3\" buttons for every occasion. $5 each with bulk discounts for large orders. Louisiana-based with fast turnaround.",
-  icons: {
-    icon: [
-      { url: "/logo.png", type: "image/png" },
-    ],
-    apple: [
-      { url: "/logo.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/logo.png",
-  },
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  let singlePrice = 5
+  try {
+    const payload = await getPayload()
+    const settings = await payload.findGlobal({ slug: 'site-settings' })
+    singlePrice = settings.singlePrice ?? 5
+  } catch { /* fallback to default */ }
+
+  const description = `Custom 3" buttons for every occasion. $${singlePrice.toFixed(2)} each with bulk discounts for large orders. Baton Rouge-based with fast turnaround.`
+
+  return {
     title: "L. Ellis Designs - Custom 3\" Buttons",
-    description: "Custom 3\" buttons for every occasion. $5 each with bulk discounts for large orders. Louisiana-based with fast turnaround.",
-    images: ["/logo.png"],
-    type: "website",
-  },
-};
+    description,
+    icons: {
+      icon: [
+        { url: "/logo.png", type: "image/png" },
+      ],
+      apple: [
+        { url: "/logo.png", sizes: "180x180", type: "image/png" },
+      ],
+      shortcut: "/logo.png",
+    },
+    openGraph: {
+      title: "L. Ellis Designs - Custom 3\" Buttons",
+      description,
+      images: ["/logo.png"],
+      type: "website",
+    },
+  }
+}
 
 export default async function RootLayout({
   children,

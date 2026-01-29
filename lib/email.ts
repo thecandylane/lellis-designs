@@ -140,7 +140,7 @@ export async function sendOrderConfirmation(data: OrderEmailData) {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
       </div>
     </div>
@@ -248,7 +248,7 @@ export async function sendReadyForPickup(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
       </div>
     </div>
@@ -300,7 +300,7 @@ export async function sendShippedNotification(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
       </div>
     </div>
@@ -446,7 +446,7 @@ export async function sendCustomerQuote(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
         <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
           Request ID: ${requestId.slice(0, 8).toUpperCase()}
@@ -505,7 +505,7 @@ export async function sendPaymentLink(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
         <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
           Order ID: ${orderId.slice(0, 8).toUpperCase()}
@@ -593,7 +593,7 @@ export async function sendQuoteNotification(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs • Custom 3" Buttons • Louisiana
+          L. Ellis Designs • Custom 3" Buttons • Baton Rouge, LA
         </p>
         <p style="color: #666; margin: 8px 0 0 0; font-size: 12px;">
           Request ID: ${requestId.slice(0, 8).toUpperCase()}
@@ -645,7 +645,7 @@ export async function sendProductionStartedEmail(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs - Custom 3" Buttons - Louisiana
+          L. Ellis Designs - Custom 3" Buttons - Baton Rouge, LA
         </p>
       </div>
     </div>
@@ -696,7 +696,7 @@ export async function sendOrderCompletedEmail(data: {
 
       <div style="background: #333; padding: 24px; text-align: center;">
         <p style="color: #999; margin: 0; font-size: 14px;">
-          L. Ellis Designs - Custom 3" Buttons - Louisiana
+          L. Ellis Designs - Custom 3" Buttons - Baton Rouge, LA
         </p>
       </div>
     </div>

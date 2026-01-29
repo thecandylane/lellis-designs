@@ -60,7 +60,7 @@ const Footer = ({ className }: FooterProps) => {
               </div>
             </Link>
             <p className="text-primary-foreground/80 text-sm leading-relaxed mb-6 max-w-sm">
-              Handcrafted 3-inch buttons made with love in Louisiana. Perfect for sports teams,
+              Handcrafted 3-inch buttons made with love in Baton Rouge. Perfect for sports teams,
               schools, and special celebrations.
             </p>
 
@@ -68,7 +68,7 @@ const Footer = ({ className }: FooterProps) => {
             <div className="space-y-2 text-sm text-primary-foreground/80">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-secondary" />
-                <span>Louisiana, USA</span>
+                <span>Baton Rouge, LA</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-secondary" />

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, X, Upload, Loader2 } from 'lucide-react'
+import { usePricing } from '@/lib/usePricing'
 
 type Category = {
   id: string
@@ -16,6 +17,7 @@ type Props = {
 
 export default function AddButtonForm({ categories }: Props) {
   const router = useRouter()
+  const { pricing } = usePricing()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showModal, setShowModal] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -24,9 +26,13 @@ export default function AddButtonForm({ categories }: Props) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '5',
+    price: String(pricing.singlePrice),
     categoryId: '',
   })
+
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, price: String(pricing.singlePrice) }))
+  }, [pricing.singlePrice])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -73,7 +79,7 @@ export default function AddButtonForm({ categories }: Props) {
         // We'd need to update after creation if price differs
 
         setShowModal(false)
-        setFormData({ name: '', description: '', price: '5', categoryId: '' })
+        setFormData({ name: '', description: '', price: String(pricing.singlePrice), categoryId: '' })
         setFile(null)
         setPreview(null)
         router.refresh()
@@ -89,7 +95,7 @@ export default function AddButtonForm({ categories }: Props) {
   }
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', price: '5', categoryId: '' })
+    setFormData({ name: '', description: '', price: String(pricing.singlePrice), categoryId: '' })
     setFile(null)
     setPreview(null)
     setShowModal(false)
