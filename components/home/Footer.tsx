@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Mail, Phone } from "lucide-react";
-import { FaFacebook, FaInstagram } from "react-icons/fa";
+import { FaInstagram } from "react-icons/fa";
 
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,6 @@ const sections = [
       { name: "Contact Us", href: "/contact" },
       { name: "Shipping Info", href: "/shipping" },
       { name: "FAQ", href: "/faq" },
-      { name: "Track Order", href: "/track" },
     ],
   },
   {
@@ -81,14 +80,9 @@ const Footer = ({ className }: FooterProps) => {
             {/* Social Links */}
             <div className="flex gap-3 mt-6">
               <a
-                href="#"
-                className="flex size-10 items-center justify-center rounded-full bg-primary-foreground/10 transition-colors hover:bg-secondary hover:text-secondary-foreground"
-                aria-label="Facebook"
-              >
-                <FaFacebook className="size-5" />
-              </a>
-              <a
-                href="#"
+                href="https://instagram.com/lellisdesigns"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex size-10 items-center justify-center rounded-full bg-primary-foreground/10 transition-colors hover:bg-secondary hover:text-secondary-foreground"
                 aria-label="Instagram"
               >
