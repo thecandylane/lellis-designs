@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Image from 'next/image'
 import { Sparkles } from 'lucide-react'
 import type { Button } from '@/lib/types'
@@ -13,7 +14,7 @@ type ButtonCardProps = {
   featured?: boolean
 }
 
-export default function ButtonCard({ button, onClick, accentColor, featured }: ButtonCardProps) {
+function ButtonCard({ button, onClick, accentColor, featured }: ButtonCardProps) {
   const { pricing, loading } = usePricing()
   const color = accentColor || '#461D7C'
   const isCustomizable = button.customization === 'customizable'
@@ -78,3 +79,6 @@ export default function ButtonCard({ button, onClick, accentColor, featured }: B
     </button>
   )
 }
+
+// Memoize to prevent re-renders when other buttons in grid change
+export default memo(ButtonCard)

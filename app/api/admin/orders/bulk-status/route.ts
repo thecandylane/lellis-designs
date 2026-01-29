@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { apiError } from '@/lib/api-response'
 
 type BulkStatusRequest = {
   ids: string[]
@@ -28,22 +29,28 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = await getPayload()
-    let successCount = 0
-    let errorCount = 0
 
-    for (const id of ids) {
-      try {
-        await payload.update({
+    // Batch update all orders in parallel using Promise.allSettled
+    // to track successes and failures independently
+    const results = await Promise.allSettled(
+      ids.map(id =>
+        payload.update({
           collection: 'orders',
           id,
           data: { status },
         })
-        successCount++
-      } catch (error) {
-        console.error(`Failed to update order ${id}:`, error)
-        errorCount++
+      )
+    )
+
+    const successCount = results.filter(r => r.status === 'fulfilled').length
+    const errorCount = results.filter(r => r.status === 'rejected').length
+
+    // Log any errors
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to update order ${ids[index]}:`, result.reason)
       }
-    }
+    })
 
     const statusLabels: Record<string, string> = {
       pending: 'pending',
@@ -61,10 +68,8 @@ export async function POST(request: NextRequest) {
       message: `${successCount} order${successCount !== 1 ? 's' : ''} marked as ${statusLabels[status]}`,
     })
   } catch (error) {
-    console.error('Bulk status update error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update orders' },
-      { status: 500 }
-    )
+    return apiError('Failed to update orders', error, {
+      context: { status, orderCount: body?.ids?.length }
+    })
   }
 }

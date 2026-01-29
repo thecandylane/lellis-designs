@@ -1,16 +1,17 @@
 'use client'
 
+import { memo } from 'react'
 import Image from 'next/image'
 import { X, Minus, Plus } from 'lucide-react'
 import type { CartItem as CartItemType } from '@/lib/types'
 import { useCart, getItemKey } from '@/lib/store'
 
 type CartItemProps = {
-  item: CartItemType
+  item: CartItem Type
   pricePerItem: number
 }
 
-export default function CartItem({ item, pricePerItem }: CartItemProps) {
+function CartItem({ item, pricePerItem }: CartItemProps) {
   const updateQuantity = useCart((state) => state.updateQuantity)
   const removeItem = useCart((state) => state.removeItem)
   const itemKey = getItemKey(item)
@@ -72,3 +73,6 @@ export default function CartItem({ item, pricePerItem }: CartItemProps) {
     </div>
   )
 }
+
+// Memoize to prevent unnecessary re-renders when other cart items change
+export default memo(CartItem)
