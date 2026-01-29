@@ -7,7 +7,7 @@ import type { CartItem as CartItemType } from '@/lib/types'
 import { useCart, getItemKey } from '@/lib/store'
 
 type CartItemProps = {
-  item: CartItem Type
+  item: CartItemType
   pricePerItem: number
 }
 

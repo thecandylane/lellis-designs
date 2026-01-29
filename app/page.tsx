@@ -1,18 +1,10 @@
 import Image from 'next/image'
-import dynamicImport from 'next/dynamic'
 import { getRootCategories, getSubcategoryCount, getButtonCount, getRandomButtonImagesForCategories } from '@/lib/categories'
 import { getPayload } from '@/lib/payload'
 import CategoryGrid from '@/components/ui/CategoryGrid'
 import ShopNowButton from '@/components/ui/ShopNowButton'
 import HomeButtonShowcase from '@/components/ui/HomeButtonShowcase'
-
-// Code-split 3D component to reduce initial bundle size (~200KB+ savings)
-const HeroBallpit = dynamicImport(() => import('@/components/ui/HeroBallpit'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[400px] md:h-[600px] bg-gradient-to-br from-rose-500 to-rose-600 rounded-3xl" />
-  ),
-})
+import HeroBallpit from '@/components/ui/HeroBallpitClient'
 import { Features } from '@/components/home/Features'
 import { CTASection } from '@/components/home/CTASection'
 import { Footer } from '@/components/home/Footer'
