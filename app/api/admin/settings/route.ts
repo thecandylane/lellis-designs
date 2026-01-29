@@ -27,6 +27,7 @@ export async function GET() {
   try {
     const settings = await payload.findGlobal({
       slug: 'site-settings',
+      depth: 2, // Populate media relations
     })
 
     return NextResponse.json({
@@ -38,6 +39,9 @@ export async function GET() {
       primaryColor: settings.primaryColor || '#14B8A6',
       secondaryColor: settings.secondaryColor || '#EC4899',
       accentColor: settings.accentColor || '#84CC16',
+      // Seasonal Themes
+      activeTheme: settings.activeTheme || null,
+      seasonalThemes: settings.seasonalThemes || [],
       // Appearance
       heroStyle: settings.heroStyle || 'ballpit',
       cardStyle: settings.cardStyle || 'shadow',
@@ -50,6 +54,19 @@ export async function GET() {
       tier2Price: settings.tier2Price ?? 4,
       tier2Threshold: settings.tier2Threshold ?? 200,
       shippingCost: settings.shippingCost ?? 8,
+      // Page Backgrounds
+      homepageFeaturedBackgroundImage: settings.homepageFeaturedBackgroundImage || null,
+      aboutHeroBackgroundImage: settings.aboutHeroBackgroundImage || null,
+      customRequestBackgroundImage: settings.customRequestBackgroundImage || null,
+      contactBackgroundImage: settings.contactBackgroundImage || null,
+      // About Page
+      aboutTitle: settings.aboutTitle || 'About L. Ellis Designs',
+      aboutSubtitle: settings.aboutSubtitle || 'Handcrafted buttons made with love in Baton Rouge',
+      ownerName: settings.ownerName || null,
+      ownerPhoto: settings.ownerPhoto || null,
+      aboutStory: settings.aboutStory || null,
+      galleryImages: settings.galleryImages || [],
+      instagramUrl: settings.instagramUrl || null,
     })
   } catch (error) {
     console.error('Error fetching settings:', error)
@@ -75,6 +92,9 @@ export async function PATCH(request: NextRequest) {
     primaryColor,
     secondaryColor,
     accentColor,
+    // Seasonal Themes
+    activeTheme,
+    seasonalThemes,
     // Appearance
     heroStyle,
     cardStyle,
@@ -87,6 +107,19 @@ export async function PATCH(request: NextRequest) {
     tier2Price,
     tier2Threshold,
     shippingCost,
+    // Page Backgrounds
+    homepageFeaturedBackgroundImage,
+    aboutHeroBackgroundImage,
+    customRequestBackgroundImage,
+    contactBackgroundImage,
+    // About Page
+    aboutTitle,
+    aboutSubtitle,
+    ownerName,
+    ownerPhoto,
+    aboutStory,
+    galleryImages,
+    instagramUrl,
   } = body
 
   // Validate colors if provided
@@ -140,9 +173,76 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid animationIntensity' }, { status: 400 })
   }
 
+  // Validate seasonal themes array
+  if (seasonalThemes !== undefined) {
+    if (!Array.isArray(seasonalThemes)) {
+      return NextResponse.json({ error: 'seasonalThemes must be an array' }, { status: 400 })
+    }
+
+    for (const theme of seasonalThemes) {
+      if (!theme.name || typeof theme.name !== 'string') {
+        return NextResponse.json({ error: 'Each theme must have a name' }, { status: 400 })
+      }
+      if (!isValidHex(theme.primaryColor)) {
+        return NextResponse.json({ error: `Invalid primaryColor in theme "${theme.name}"` }, { status: 400 })
+      }
+      if (!isValidHex(theme.secondaryColor)) {
+        return NextResponse.json({ error: `Invalid secondaryColor in theme "${theme.name}"` }, { status: 400 })
+      }
+      if (theme.accentColor && !isValidHex(theme.accentColor)) {
+        return NextResponse.json({ error: `Invalid accentColor in theme "${theme.name}"` }, { status: 400 })
+      }
+      if (theme.heroStyle && !validHeroStyles.includes(theme.heroStyle)) {
+        return NextResponse.json({ error: `Invalid heroStyle in theme "${theme.name}"` }, { status: 400 })
+      }
+    }
+  }
+
+  // Validate Instagram URL format
+  if (instagramUrl !== undefined && instagramUrl !== null && instagramUrl !== '') {
+    try {
+      const url = new URL(instagramUrl)
+      if (!url.hostname.includes('instagram.com')) {
+        return NextResponse.json({ error: 'Instagram URL must be from instagram.com' }, { status: 400 })
+      }
+    } catch {
+      return NextResponse.json({ error: 'Invalid Instagram URL format' }, { status: 400 })
+    }
+  }
+
+  // Validate gallery images array
+  if (galleryImages !== undefined) {
+    if (!Array.isArray(galleryImages)) {
+      return NextResponse.json({ error: 'galleryImages must be an array' }, { status: 400 })
+    }
+
+    for (let i = 0; i < galleryImages.length; i++) {
+      const item = galleryImages[i]
+      if (!item.image || (!item.image.id && !item.image)) {
+        return NextResponse.json({ error: `Gallery image ${i + 1} must have an image` }, { status: 400 })
+      }
+    }
+  }
+
   const payload = await getPayload()
 
   try {
+    // Helper function to extract media ID from media object or direct ID
+    const extractMediaId = (value: any): string | number | null => {
+      if (!value) return null
+      if (typeof value === 'string' || typeof value === 'number') return value
+      if (value.id) return value.id
+      return null
+    }
+
+    // Process gallery images to extract media IDs
+    const processedGalleryImages = galleryImages !== undefined
+      ? galleryImages.map((item: any) => ({
+          image: extractMediaId(item.image),
+          caption: item.caption || '',
+        }))
+      : undefined
+
     await payload.updateGlobal({
       slug: 'site-settings',
       data: {
@@ -154,6 +254,9 @@ export async function PATCH(request: NextRequest) {
         ...(primaryColor !== undefined && { primaryColor }),
         ...(secondaryColor !== undefined && { secondaryColor }),
         ...(accentColor !== undefined && { accentColor }),
+        // Seasonal Themes
+        ...(activeTheme !== undefined && { activeTheme }),
+        ...(seasonalThemes !== undefined && { seasonalThemes }),
         // Appearance
         ...(heroStyle !== undefined && { heroStyle }),
         ...(cardStyle !== undefined && { cardStyle }),
@@ -166,6 +269,31 @@ export async function PATCH(request: NextRequest) {
         ...(tier2Price !== undefined && { tier2Price }),
         ...(tier2Threshold !== undefined && { tier2Threshold }),
         ...(shippingCost !== undefined && { shippingCost }),
+        // Page Backgrounds
+        ...(homepageFeaturedBackgroundImage !== undefined && {
+          homepageFeaturedBackgroundImage: extractMediaId(homepageFeaturedBackgroundImage),
+        }),
+        ...(aboutHeroBackgroundImage !== undefined && {
+          aboutHeroBackgroundImage: extractMediaId(aboutHeroBackgroundImage),
+        }),
+        ...(customRequestBackgroundImage !== undefined && {
+          customRequestBackgroundImage: extractMediaId(customRequestBackgroundImage),
+        }),
+        ...(contactBackgroundImage !== undefined && {
+          contactBackgroundImage: extractMediaId(contactBackgroundImage),
+        }),
+        // About Page
+        ...(aboutTitle !== undefined && { aboutTitle }),
+        ...(aboutSubtitle !== undefined && { aboutSubtitle }),
+        ...(ownerName !== undefined && { ownerName }),
+        ...(ownerPhoto !== undefined && {
+          ownerPhoto: extractMediaId(ownerPhoto),
+        }),
+        ...(aboutStory !== undefined && { aboutStory }),
+        ...(processedGalleryImages !== undefined && {
+          galleryImages: processedGalleryImages,
+        }),
+        ...(instagramUrl !== undefined && { instagramUrl }),
       },
     })
 

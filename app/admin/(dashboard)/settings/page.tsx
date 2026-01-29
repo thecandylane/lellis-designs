@@ -1,10 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, Loader2 } from 'lucide-react'
+import { Save, Loader2, Plus } from 'lucide-react'
 import ColorPicker from '@/components/admin/ColorPicker'
+import ImageUpload from '@/components/admin/ImageUpload'
+import ThemeCard from '@/components/admin/ThemeCard'
+import GalleryManager from '@/components/admin/GalleryManager'
 
-type Tab = 'business' | 'colors' | 'appearance' | 'pricing'
+type Tab = 'business' | 'colors' | 'themes' | 'appearance' | 'pricing' | 'backgrounds' | 'about'
+
+type MediaValue = {
+  id: string | number
+  url: string
+  alt?: string
+  filename?: string
+} | null
+
+type SeasonalTheme = {
+  name: string
+  primaryColor: string
+  secondaryColor: string
+  accentColor?: string
+  heroStyle: 'ballpit' | 'gradient' | 'solid'
+  description?: string
+}
+
+type GalleryImage = {
+  image: MediaValue
+  caption?: string
+}
 
 type SiteSettings = {
   // Business Info
@@ -15,6 +39,9 @@ type SiteSettings = {
   primaryColor: string
   secondaryColor: string
   accentColor: string
+  // Seasonal Themes
+  activeTheme?: string | null
+  seasonalThemes?: SeasonalTheme[]
   // Appearance
   heroStyle: 'ballpit' | 'gradient' | 'solid'
   cardStyle: 'shadow' | 'border' | 'flat'
@@ -27,6 +54,19 @@ type SiteSettings = {
   tier2Price: number
   tier2Threshold: number
   shippingCost: number
+  // Page Backgrounds
+  homepageFeaturedBackgroundImage?: MediaValue
+  aboutHeroBackgroundImage?: MediaValue
+  customRequestBackgroundImage?: MediaValue
+  contactBackgroundImage?: MediaValue
+  // About Page
+  aboutTitle?: string
+  aboutSubtitle?: string
+  ownerName?: string | null
+  ownerPhoto?: MediaValue
+  aboutStory?: string | null
+  galleryImages?: GalleryImage[]
+  instagramUrl?: string | null
 }
 
 const defaultSettings: SiteSettings = {
@@ -36,6 +76,8 @@ const defaultSettings: SiteSettings = {
   primaryColor: '#14B8A6',
   secondaryColor: '#EC4899',
   accentColor: '#84CC16',
+  activeTheme: null,
+  seasonalThemes: [],
   heroStyle: 'ballpit',
   cardStyle: 'shadow',
   buttonStyle: 'rounded',
@@ -46,6 +88,17 @@ const defaultSettings: SiteSettings = {
   tier2Price: 4,
   tier2Threshold: 200,
   shippingCost: 8,
+  homepageFeaturedBackgroundImage: null,
+  aboutHeroBackgroundImage: null,
+  customRequestBackgroundImage: null,
+  contactBackgroundImage: null,
+  aboutTitle: 'About L. Ellis Designs',
+  aboutSubtitle: 'Handcrafted buttons made with love in Baton Rouge',
+  ownerName: null,
+  ownerPhoto: null,
+  aboutStory: null,
+  galleryImages: [],
+  instagramUrl: null,
 }
 
 export default function SettingsPage() {
@@ -105,8 +158,11 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'business', label: 'Business Info' },
     { id: 'colors', label: 'Brand Colors' },
+    { id: 'themes', label: 'Seasonal Themes' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'pricing', label: 'Pricing' },
+    { id: 'backgrounds', label: 'Page Backgrounds' },
+    { id: 'about', label: 'About Page' },
   ]
 
   if (loading) {
@@ -239,6 +295,117 @@ export default function SettingsPage() {
                 value={settings.accentColor}
                 onChange={(color) => updateSettings('accentColor', color)}
               />
+            </div>
+          )}
+
+          {/* Seasonal Themes Tab */}
+          {activeTab === 'themes' && (
+            <div className="space-y-6">
+              <p className="text-sm text-gray-500">
+                Create seasonal themes and activate them to temporarily override your default brand colors.
+              </p>
+
+              {/* Active Theme Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Active Theme
+                </label>
+                <select
+                  value={settings.activeTheme || ''}
+                  onChange={(e) => updateSettings('activeTheme', e.target.value || null)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors"
+                >
+                  <option value="">None - Use Default Colors</option>
+                  {settings.seasonalThemes?.map((theme, index) => (
+                    <option key={index} value={theme.name}>
+                      {theme.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-2">
+                  {settings.activeTheme
+                    ? `Currently using "${settings.activeTheme}" theme colors`
+                    : 'Using default brand colors'}
+                </p>
+              </div>
+
+              {/* Theme List */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-gray-700">
+                    Seasonal Themes ({settings.seasonalThemes?.length || 0})
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newTheme: SeasonalTheme = {
+                        name: 'New Theme',
+                        primaryColor: '#14B8A6',
+                        secondaryColor: '#EC4899',
+                        accentColor: '#84CC16',
+                        heroStyle: 'ballpit',
+                        description: '',
+                      }
+                      updateSettings('seasonalThemes', [
+                        ...(settings.seasonalThemes || []),
+                        newTheme,
+                      ])
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Theme
+                  </button>
+                </div>
+
+                {(!settings.seasonalThemes || settings.seasonalThemes.length === 0) ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <p className="text-gray-500 mb-3">No seasonal themes yet</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newTheme: SeasonalTheme = {
+                          name: 'Christmas',
+                          primaryColor: '#C41E3A',
+                          secondaryColor: '#165B33',
+                          accentColor: '#FFD700',
+                          heroStyle: 'gradient',
+                          description: 'Red and green for the holiday season',
+                        }
+                        updateSettings('seasonalThemes', [newTheme])
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create First Theme
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {settings.seasonalThemes.map((theme, index) => (
+                      <ThemeCard
+                        key={index}
+                        theme={theme}
+                        index={index}
+                        isActive={settings.activeTheme === theme.name}
+                        onUpdate={(idx, updatedTheme) => {
+                          const newThemes = [...(settings.seasonalThemes || [])]
+                          newThemes[idx] = updatedTheme
+                          updateSettings('seasonalThemes', newThemes)
+                        }}
+                        onDelete={(idx) => {
+                          const newThemes = settings.seasonalThemes?.filter((_, i) => i !== idx) || []
+                          updateSettings('seasonalThemes', newThemes)
+                          // If deleting active theme, deactivate it
+                          if (settings.activeTheme === theme.name) {
+                            updateSettings('activeTheme', null)
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -525,6 +692,151 @@ export default function SettingsPage() {
                   <p>{settings.tier1Threshold}-{settings.tier2Threshold - 1} buttons: ${settings.tier1Price.toFixed(2)} each</p>
                   <p>{settings.tier2Threshold}+ buttons: ${settings.tier2Price.toFixed(2)} each</p>
                   <p className="pt-2 border-t border-gray-200 mt-2">Shipping: ${settings.shippingCost.toFixed(2)} flat rate</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Page Backgrounds Tab */}
+          {activeTab === 'backgrounds' && (
+            <div className="space-y-8">
+              <p className="text-sm text-gray-500">
+                Upload custom background images for different pages. Leave empty to use default backgrounds.
+              </p>
+
+              <ImageUpload
+                value={settings.homepageFeaturedBackgroundImage}
+                onChange={(id) => updateSettings('homepageFeaturedBackgroundImage', id ? { id, url: '', alt: '' } : null)}
+                label="Homepage Featured Section Background"
+                description="Background image for the featured buttons section on the homepage (section-specific)"
+              />
+
+              <ImageUpload
+                value={settings.aboutHeroBackgroundImage}
+                onChange={(id) => updateSettings('aboutHeroBackgroundImage', id ? { id, url: '', alt: '' } : null)}
+                label="About Page Hero Background"
+                description="Background image for the hero section on the About page (section-specific)"
+              />
+
+              <ImageUpload
+                value={settings.customRequestBackgroundImage}
+                onChange={(id) => updateSettings('customRequestBackgroundImage', id ? { id, url: '', alt: '' } : null)}
+                label="Custom Request Page Background"
+                description="Full-page background for the Custom Request page"
+              />
+
+              <ImageUpload
+                value={settings.contactBackgroundImage}
+                onChange={(id) => updateSettings('contactBackgroundImage', id ? { id, url: '', alt: '' } : null)}
+                label="Contact Page Background"
+                description="Full-page background for the Contact page"
+              />
+            </div>
+          )}
+
+          {/* About Page Tab */}
+          {activeTab === 'about' && (
+            <div className="space-y-8">
+              {/* Hero Content Section */}
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Hero Content</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      About Page Title
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.aboutTitle || ''}
+                      onChange={(e) => updateSettings('aboutTitle', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors"
+                      placeholder="About L. Ellis Designs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      About Page Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.aboutSubtitle || ''}
+                      onChange={(e) => updateSettings('aboutSubtitle', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors"
+                      placeholder="Handcrafted buttons made with love in Baton Rouge"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Owner Info Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Owner Info</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Owner Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.ownerName || ''}
+                      onChange={(e) => updateSettings('ownerName', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors"
+                      placeholder="Your name"
+                    />
+                  </div>
+
+                  <ImageUpload
+                    value={settings.ownerPhoto}
+                    onChange={(id) => updateSettings('ownerPhoto', id ? { id, url: '', alt: '' } : null)}
+                    label="Owner Photo"
+                    description="Photo for the About page story section"
+                  />
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      About Story
+                    </label>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Tell your story - how the business started, what you love about it, etc.
+                    </p>
+                    <textarea
+                      value={settings.aboutStory || ''}
+                      onChange={(e) => updateSettings('aboutStory', e.target.value)}
+                      rows={8}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors resize-none"
+                      placeholder="Share your story here..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Gallery Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Gallery</h3>
+                <GalleryManager
+                  images={settings.galleryImages || []}
+                  onChange={(images) => updateSettings('galleryImages', images)}
+                />
+              </div>
+
+              {/* Social Media Section */}
+              <div className="pt-6 border-t border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900 mb-4">Social Media</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Instagram URL
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.instagramUrl || ''}
+                    onChange={(e) => updateSettings('instagramUrl', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors"
+                    placeholder="https://instagram.com/lellisdesigns"
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Link to your Instagram profile
+                  </p>
                 </div>
               </div>
             </div>
