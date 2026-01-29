@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { safeJsonParse, validateImageFile } from '@/lib/security'
 
 type ButtonData = {
   name: string
@@ -20,7 +21,31 @@ export async function POST(request: NextRequest) {
 
     // Get button metadata from form
     const buttonsJson = formData.get('buttons') as string
-    const buttons: ButtonData[] = JSON.parse(buttonsJson)
+    let buttons: ButtonData[]
+    try {
+      buttons = safeJsonParse<ButtonData[]>(buttonsJson, 'buttons')
+
+      if (!Array.isArray(buttons)) {
+        return NextResponse.json(
+          { error: 'Invalid buttons data: must be an array' },
+          { status: 400 }
+        )
+      }
+
+      for (let i = 0; i < buttons.length; i++) {
+        if (!buttons[i].name || !buttons[i].filename) {
+          return NextResponse.json(
+            { error: `Button at index ${i}: name and filename required` },
+            { status: 400 }
+          )
+        }
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid format' },
+        { status: 400 }
+      )
+    }
 
     const results: { success: boolean; name: string; error?: string }[] = []
 
@@ -30,6 +55,12 @@ export async function POST(request: NextRequest) {
         const file = formData.get(`file-${buttonData.filename}`) as File
         if (!file) {
           results.push({ success: false, name: buttonData.name, error: 'File not found' })
+          continue
+        }
+
+        const validation = validateImageFile(file)
+        if (!validation.valid) {
+          results.push({ success: false, name: buttonData.name, error: validation.error })
           continue
         }
 

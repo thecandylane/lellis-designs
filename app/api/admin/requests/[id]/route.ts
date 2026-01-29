@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
 import { sendQuoteNotification } from '@/lib/email'
+import { validatePositiveNumber } from '@/lib/security'
 
 type Params = Promise<{ id: string }>
 
@@ -20,25 +21,68 @@ export async function PATCH(
     const body = await request.json()
     const payload = await getPayload()
 
-    // Handle nested field updates (e.g., 'adminSection.quotedPrice')
+    // Whitelist of allowed fields
+    const ALLOWED_TOP_LEVEL = [
+      'status', 'customerName', 'customerEmail',
+      'customerPhone', 'preferredContact', 'isRush'
+    ] as const
+
+    const ALLOWED_NESTED = {
+      adminSection: ['quotedPrice', 'rushFee', 'adminNotes', 'internalStatus'],
+      designDetails: ['description', 'eventType', 'colorPreferences'],
+      textOptions: ['wantsText', 'textContent', 'fontPreference'],
+      orderDetails: ['quantity', 'neededByDate', 'isFlexibleDate', 'deliveryPreference'],
+    } as const
+
     const updateData: Record<string, unknown> = {}
 
     for (const [key, value] of Object.entries(body)) {
       if (key.includes('.')) {
-        // Parse nested paths like 'adminSection.quotedPrice'
         const parts = key.split('.')
-        let current = updateData
+        if (parts.length !== 2) continue // Only 1 level deep
 
-        for (let i = 0; i < parts.length - 1; i++) {
-          if (!current[parts[i]]) {
-            current[parts[i]] = {}
+        const [parent, child] = parts
+        const allowedChildren = ALLOWED_NESTED[parent as keyof typeof ALLOWED_NESTED]
+        // Type-safe check: allowedChildren is readonly array, child is string
+        if (!allowedChildren || !(allowedChildren as readonly string[]).includes(child)) continue
+
+        // Validate numeric fields
+        if (parent === 'adminSection' && (child === 'quotedPrice' || child === 'rushFee')) {
+          try {
+            const validated = validatePositiveNumber(value, `${parent}.${child}`)
+            if (!updateData[parent]) updateData[parent] = {}
+            ;(updateData[parent] as Record<string, unknown>)[child] = validated
+          } catch (error) {
+            return NextResponse.json(
+              { error: error instanceof Error ? error.message : 'Validation failed' },
+              { status: 400 }
+            )
           }
-          current = current[parts[i]] as Record<string, unknown>
+          continue
         }
 
-        current[parts[parts.length - 1]] = value
+        if (parent === 'orderDetails' && child === 'quantity') {
+          try {
+            const validated = validatePositiveNumber(value, 'quantity', { min: 1 })
+            if (!updateData[parent]) updateData[parent] = {}
+            ;(updateData[parent] as Record<string, unknown>)[child] = validated
+          } catch (error) {
+            return NextResponse.json(
+              { error: error instanceof Error ? error.message : 'Validation failed' },
+              { status: 400 }
+            )
+          }
+          continue
+        }
+
+        // Valid nested field
+        if (!updateData[parent]) updateData[parent] = {}
+        ;(updateData[parent] as Record<string, unknown>)[child] = value
       } else {
-        updateData[key] = value
+        // Top-level field
+        if (ALLOWED_TOP_LEVEL.includes(key as any)) {
+          updateData[key] = value
+        }
       }
     }
 

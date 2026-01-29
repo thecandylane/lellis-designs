@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { apiError } from '@/lib/api-response'
 
 type Params = Promise<{ id: string }>
 
@@ -76,19 +77,9 @@ export async function POST(
     }, { status: 400 })
   }
 
-  // Delete the order
+  // Update request first, then delete order (safer order to prevent orphaned state)
   try {
-    await payload.delete({
-      collection: 'orders',
-      id: convertedOrderId,
-    })
-  } catch (error) {
-    console.error('Error deleting order:', error)
-    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
-  }
-
-  // Update the custom request: clear the order reference and set status to declined
-  try {
+    // Step 1: Update the custom request to clear order reference and mark as declined
     await payload.update({
       collection: 'custom-requests',
       id,
@@ -97,12 +88,27 @@ export async function POST(
         status: 'declined',
       },
     })
+
+    // Step 2: Delete the order
+    // If this fails, the request is correctly marked as declined
+    try {
+      await payload.delete({
+        collection: 'orders',
+        id: convertedOrderId,
+      })
+    } catch (deleteError) {
+      // Request was updated but order deletion failed
+      // This is less critical than the reverse (orphaned order with no request link)
+      console.error('Failed to delete order after updating request:', deleteError)
+      return NextResponse.json({
+        success: true,
+        warning: 'Request marked as declined but order deletion failed. Manual cleanup may be needed.',
+        orderId: convertedOrderId,
+      })
+    }
   } catch (error) {
-    console.error('Error updating custom request:', error)
-    // The order was deleted but we couldn't update the request
-    return NextResponse.json({
-      success: true,
-      warning: 'Order deleted but failed to update request status',
+    return apiError('Failed to cancel order', error, {
+      context: { requestId: id, orderId: convertedOrderId }
     })
   }
 

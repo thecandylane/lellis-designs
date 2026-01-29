@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { apiError } from '@/lib/api-response'
 
 type ReorderItem = {
   id: string
@@ -26,21 +27,19 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload()
 
-    // Update items sequentially to avoid exhausting connection pool
-    for (const item of items) {
-      await payload.update({
-        collection: 'categories',
-        id: item.id,
-        data: { sortOrder: item.sortOrder },
-      })
-    }
+    // Batch update all items in parallel for better performance
+    await Promise.all(
+      items.map(item =>
+        payload.update({
+          collection: 'categories',
+          id: item.id,
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Reorder categories error:', error)
-    return NextResponse.json(
-      { error: 'Failed to reorder categories' },
-      { status: 500 }
-    )
+    return apiError('Failed to reorder categories', error)
   }
 }

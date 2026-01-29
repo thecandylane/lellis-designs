@@ -119,6 +119,11 @@ export function validateEnv(): EnvValidationResult {
  * Throws in production if validation fails
  */
 export function validateEnvOrThrow(): void {
+  // Skip validation during build phase - env vars are only available at runtime
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return
+  }
+
   const result = validateEnv()
   const isProduction = process.env.NODE_ENV === 'production'
 

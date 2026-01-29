@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { sendAdminCustomRequestNotification } from '@/lib/email'
+import { checkRateLimit, customRequestRateLimiter, validateImageFile } from '@/lib/security'
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = checkRateLimit(request, customRequestRateLimiter)
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: rateLimitResult.error },
+      { status: 429, headers: { 'Retry-After': String(rateLimitResult.retryAfter) } }
+    )
+  }
+
   try {
     const formData = await request.formData()
     const payload = await getPayload({ config })
@@ -54,6 +63,12 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i]
       if (file && file.size > 0) {
+        const validation = validateImageFile(file)
+        if (!validation.valid) {
+          console.error(`Image ${i + 1} validation failed:`, validation.error)
+          continue
+        }
+
         try {
           // Convert File to Buffer for Payload
           const arrayBuffer = await file.arrayBuffer()

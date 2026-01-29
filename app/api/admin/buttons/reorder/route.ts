@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
+import { apiError } from '@/lib/api-response'
 
 type ReorderItem = {
   id: string
@@ -26,20 +27,20 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload()
 
-    for (const item of items) {
-      await payload.update({
-        collection: 'buttons',
-        id: item.id,
-        data: { sortOrder: item.sortOrder },
-      })
-    }
+    // Batch update all items in parallel instead of sequential loop
+    // This prevents N+1 queries (100 buttons = 100 DB calls -> 1 parallel batch)
+    await Promise.all(
+      items.map(item =>
+        payload.update({
+          collection: 'buttons',
+          id: item.id,
+          data: { sortOrder: item.sortOrder },
+        })
+      )
+    )
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Reorder buttons error:', error)
-    return NextResponse.json(
-      { error: 'Failed to reorder buttons' },
-      { status: 500 }
-    )
+    return apiError('Failed to reorder buttons', error)
   }
 }
