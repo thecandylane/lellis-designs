@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/lib/payload'
 import { getUser } from '@/lib/auth'
 import { apiError } from '@/lib/api-response'
+import { VALID_ORDER_STATUSES, ORDER_STATUS_LABELS, type OrderStatus } from '@/lib/constants'
 
 type BulkStatusRequest = {
   ids: string[]
-  status: 'pending' | 'paid' | 'production' | 'ready' | 'shipped' | 'completed'
+  status: OrderStatus
 }
-
-const validStatuses = ['pending', 'paid', 'production', 'ready', 'shipped', 'completed']
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No orders selected' }, { status: 400 })
     }
 
-    if (!status || !validStatuses.includes(status)) {
+    if (!status || !(VALID_ORDER_STATUSES as readonly string[]).includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
@@ -52,20 +51,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const statusLabels: Record<string, string> = {
-      pending: 'pending',
-      paid: 'paid',
-      production: 'in production',
-      ready: 'ready',
-      shipped: 'shipped',
-      completed: 'completed',
-    }
-
     return NextResponse.json({
       success: true,
       successCount,
       errorCount,
-      message: `${successCount} order${successCount !== 1 ? 's' : ''} marked as ${statusLabels[status]}`,
+      message: `${successCount} order${successCount !== 1 ? 's' : ''} marked as ${ORDER_STATUS_LABELS[status].label.toLowerCase()}`,
     })
   } catch (error) {
     return apiError('Failed to update orders', error, {

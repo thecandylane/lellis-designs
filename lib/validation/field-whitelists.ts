@@ -3,6 +3,8 @@
  * Prevents field injection attacks by explicitly defining allowed fields for updates
  */
 
+import { VALID_CONTACT_REQUEST_STATUSES, VALID_ORDER_STATUSES } from '@/lib/constants'
+
 /**
  * Allowed fields for button updates via admin API
  * Fields like internal IDs, timestamps, etc. are excluded
@@ -22,14 +24,9 @@ export const BUTTON_ALLOWED_FIELDS = [
 export type ButtonAllowedField = typeof BUTTON_ALLOWED_FIELDS[number]
 
 /**
- * Valid status values for contact requests
+ * Valid status values for contact requests (re-exported from constants)
  */
-export const CONTACT_REQUEST_ALLOWED_STATUS = [
-  'new',
-  'contacted',
-  'resolved',
-  'spam',
-] as const
+export const CONTACT_REQUEST_ALLOWED_STATUS = VALID_CONTACT_REQUEST_STATUSES
 
 export type ContactRequestStatus = typeof CONTACT_REQUEST_ALLOWED_STATUS[number]
 
@@ -44,17 +41,9 @@ export const CONTACT_REQUEST_ALLOWED_FIELDS = [
 export type ContactRequestAllowedField = typeof CONTACT_REQUEST_ALLOWED_FIELDS[number]
 
 /**
- * Valid order statuses
+ * Valid order statuses (re-exported from constants)
  */
-export const ORDER_ALLOWED_STATUS = [
-  'pending',
-  'paid',
-  'production',
-  'ready',
-  'shipped',
-  'completed',
-  'cancelled',
-] as const
+export const ORDER_ALLOWED_STATUS = VALID_ORDER_STATUSES
 
 export type OrderStatus = typeof ORDER_ALLOWED_STATUS[number]
 

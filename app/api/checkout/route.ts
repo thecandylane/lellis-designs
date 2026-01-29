@@ -3,6 +3,7 @@ import { getStripe } from '@/lib/stripe'
 import type { CartItem } from '@/lib/types'
 import { getPayload } from '@/lib/payload'
 import { checkRateLimit, checkoutRateLimiter } from '@/lib/security'
+import { getPricePerButton, DEFAULT_PRICING, type PricingConfig } from '@/lib/pricing'
 
 type ShippingMethod = 'pickup' | 'ups'
 
@@ -14,24 +15,17 @@ type CheckoutRequest = {
 }
 
 // Fetch pricing from SiteSettings
-async function getPricing() {
+async function getPricing(): Promise<PricingConfig> {
   const payload = await getPayload()
   const settings = await payload.findGlobal({ slug: 'site-settings' })
   return {
-    singlePrice: settings.singlePrice ?? 5,
-    tier1Price: settings.tier1Price ?? 4.5,
-    tier1Threshold: settings.tier1Threshold ?? 100,
-    tier2Price: settings.tier2Price ?? 4,
-    tier2Threshold: settings.tier2Threshold ?? 200,
-    shippingCost: settings.shippingCost ?? 8,
+    singlePrice: settings.singlePrice ?? DEFAULT_PRICING.singlePrice,
+    tier1Price: settings.tier1Price ?? DEFAULT_PRICING.tier1Price,
+    tier1Threshold: settings.tier1Threshold ?? DEFAULT_PRICING.tier1Threshold,
+    tier2Price: settings.tier2Price ?? DEFAULT_PRICING.tier2Price,
+    tier2Threshold: settings.tier2Threshold ?? DEFAULT_PRICING.tier2Threshold,
+    shippingCost: settings.shippingCost ?? DEFAULT_PRICING.shippingCost,
   }
-}
-
-// Calculate price per button based on quantity and pricing config
-function getPricePerButton(quantity: number, pricing: { singlePrice: number; tier1Price: number; tier1Threshold: number; tier2Price: number; tier2Threshold: number }) {
-  if (quantity >= pricing.tier2Threshold) return pricing.tier2Price
-  if (quantity >= pricing.tier1Threshold) return pricing.tier1Price
-  return pricing.singlePrice
 }
 
 // Security: Input validation limits
