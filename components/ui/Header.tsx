@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingCart, Menu, Home, Sparkles, Mail } from 'lucide-react'
+import { ShoppingCart, Menu, Home, Sparkles, Mail, User } from 'lucide-react'
 import { useCart } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import {
@@ -19,6 +19,7 @@ const navLinks = [
   { href: '/', label: 'Shop', icon: Home },
   { href: '/custom-request', label: 'Custom Order', icon: Sparkles },
   { href: '/contact', label: 'Contact', icon: Mail },
+  { href: '/about', label: 'About', icon: User },
 ]
 
 export default function Header() {

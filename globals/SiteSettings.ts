@@ -249,6 +249,80 @@ export const SiteSettings: GlobalConfig = {
             },
           ],
         },
+        {
+          label: 'About Page',
+          description: 'Content for the About page and gallery',
+          fields: [
+            {
+              name: 'aboutTitle',
+              type: 'text',
+              defaultValue: 'About L. Ellis Designs',
+              admin: {
+                description: 'Title for the about page hero section',
+              },
+            },
+            {
+              name: 'aboutSubtitle',
+              type: 'text',
+              defaultValue: 'Handcrafted buttons made with love in Baton Rouge',
+              admin: {
+                description: 'Subtitle/tagline for the about page',
+              },
+            },
+            {
+              name: 'ownerName',
+              type: 'text',
+              admin: {
+                description: 'Name of the business owner',
+              },
+            },
+            {
+              name: 'ownerPhoto',
+              type: 'upload',
+              relationTo: 'media',
+              admin: {
+                description: 'Photo of the owner for the story section',
+              },
+            },
+            {
+              name: 'aboutStory',
+              type: 'textarea',
+              admin: {
+                description: 'The story behind the business - personal narrative about how it started, what you love about it, etc.',
+                rows: 8,
+              },
+            },
+            {
+              name: 'galleryImages',
+              type: 'array',
+              admin: {
+                description: 'Images for the gallery section - showcase your work, events, happy customers',
+              },
+              fields: [
+                {
+                  name: 'image',
+                  type: 'upload',
+                  relationTo: 'media',
+                  required: true,
+                },
+                {
+                  name: 'caption',
+                  type: 'text',
+                  admin: {
+                    description: 'Optional caption for this image',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'instagramUrl',
+              type: 'text',
+              admin: {
+                description: 'Instagram profile URL (e.g., https://instagram.com/lellisdesigns)',
+              },
+            },
+          ],
+        },
       ],
     },
   ],
