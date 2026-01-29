@@ -2,9 +2,9 @@ import Image from 'next/image'
 import { getRootCategories, getSubcategoryCount, getButtonCount, getRandomButtonImagesForCategories } from '@/lib/categories'
 import { getPayload } from '@/lib/payload'
 import CategoryGrid from '@/components/ui/CategoryGrid'
+import HeroBallpit from '@/components/ui/HeroBallpit'
 import ShopNowButton from '@/components/ui/ShopNowButton'
 import HomeButtonShowcase from '@/components/ui/HomeButtonShowcase'
-import HeroBallpit from '@/components/ui/HeroBallpitClient'
 import { Features } from '@/components/home/Features'
 import { CTASection } from '@/components/home/CTASection'
 import { Footer } from '@/components/home/Footer'
@@ -73,7 +73,7 @@ export default async function HomePage() {
       description: b.description || null,
       tags: null,
       image_url: typeof b.image === 'object' && b.image?.url ? b.image.url : '/placeholder.png',
-      price: b.price ?? null,
+      price: b.price,
       lead_time_days: 0,
       customization: 'as_is' as const,
       active: b.active,
