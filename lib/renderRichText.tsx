@@ -54,11 +54,11 @@ function renderNodes(nodes: any[]): React.ReactNode {
 
     // Handle heading nodes
     if (node.type === 'heading') {
-      const Tag = `h${node.tag}` as keyof JSX.IntrinsicElements
-      return (
-        <Tag key={index}>
-          {node.children && renderNodes(node.children)}
-        </Tag>
+      const tag = `h${node.tag || 2}`
+      return React.createElement(
+        tag,
+        { key: index },
+        node.children && renderNodes(node.children)
       )
     }
 
