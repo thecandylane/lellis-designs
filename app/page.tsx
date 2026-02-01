@@ -8,7 +8,7 @@ import HomeButtonShowcase from '@/components/ui/HomeButtonShowcase'
 import { Features } from '@/components/home/Features'
 import { CTASection } from '@/components/home/CTASection'
 import { Footer } from '@/components/home/Footer'
-import { Star } from 'lucide-react'
+import { TrustStrip } from '@/components/ui/TrustStrip'
 import type { Category, Button } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -88,25 +88,31 @@ export default async function HomePage() {
     ]
 
     // Map Payload buttons to our Button type
-    allButtons = buttons.map((b) => ({
-      id: String(b.id),
-      category_id: typeof b.category === 'object' && b.category ? String(b.category.id) : (b.category ? String(b.category) : null),
-      name: b.name,
-      description: b.description || null,
-      tags: null,
-      image_url: typeof b.image === 'object' && b.image?.url ? b.image.url : '/placeholder.png',
-      price: b.price,
-      lead_time_days: 0,
-      customization: 'as_is' as const,
-      active: b.active,
-      featured: b.featured ?? false,
-      sku: null,
-    }))
+    allButtons = buttons.map((b) => {
+      const imageObj = typeof b.image === 'object' ? b.image : null
+      return {
+        id: String(b.id),
+        category_id: typeof b.category === 'object' && b.category ? String(b.category.id) : (b.category ? String(b.category) : null),
+        name: b.name,
+        description: b.description || null,
+        tags: null,
+        image_url: imageObj?.url || '/placeholder.png',
+        // Use Payload's pre-generated sizes to avoid Next.js transformations
+        image_thumbnail: imageObj?.sizes?.thumbnail?.url,
+        image_card: imageObj?.sizes?.card?.url,
+        price: b.price,
+        lead_time_days: 0,
+        customization: 'as_is' as const,
+        active: b.active,
+        featured: b.featured ?? false,
+        sku: null,
+      }
+    })
   } catch (error) {
     console.error('Failed to fetch buttons:', error)
   }
 
-  // Fetch pricing from site settings
+  // Fetch pricing, background images, and social proof from site settings
   let pricing = {
     singlePrice: 5,
     tier1Price: 4.5,
@@ -114,15 +120,69 @@ export default async function HomePage() {
     tier2Price: 4,
     tier2Threshold: 200,
   }
+  let homepageFeaturedBackgroundImage: string | null = null
+  let socialProof = {
+    customerRating: 5.0,
+    customerCount: '500+',
+    businessDescription: 'Handcrafted 3-inch buttons made with love in Baton Rouge. Perfect for sports teams, schools, and special celebrations.',
+  }
+  let footerSettings = {
+    footerEmail: 'hello@lellisdesigns.com',
+    footerLocation: 'Baton Rouge, LA',
+    footerNavigation: undefined as any,
+    businessInstagram: 'https://instagram.com/lellisdesigns',
+  }
+  let featuresSettings = {
+    featuresHeading: 'Why Choose L. Ellis Designs?',
+    featuresSubheading: 'We\'re passionate about creating buttons that celebrate your team, your school, and your special moments.',
+    featureItems: undefined as any,
+  }
+  let ctaSettings = {
+    homepageCtaHeading: 'Have a Special Design in Mind?',
+    homepageCtaSubtext: 'We love bringing your ideas to life! Whether it\'s custom names, photos, or unique designs - we\'re here to help create something special.',
+    homepageCtaButton1Text: 'Request Custom Design',
+    homepageCtaButton2Text: 'Browse Existing Designs',
+  }
+
   try {
     const payload = await getPayload()
-    const settings = await payload.findGlobal({ slug: 'site-settings' })
+    const settings = await payload.findGlobal({ slug: 'site-settings', depth: 1 })
     pricing = {
       singlePrice: settings.singlePrice ?? 5,
       tier1Price: settings.tier1Price ?? 4.5,
       tier1Threshold: settings.tier1Threshold ?? 100,
       tier2Price: settings.tier2Price ?? 4,
       tier2Threshold: settings.tier2Threshold ?? 200,
+    }
+    // Get background image URL
+    if (typeof settings.homepageFeaturedBackgroundImage === 'object' && settings.homepageFeaturedBackgroundImage?.url) {
+      homepageFeaturedBackgroundImage = settings.homepageFeaturedBackgroundImage.url
+    }
+    // Get social proof settings
+    socialProof = {
+      customerRating: settings.customerRating ?? 5.0,
+      customerCount: settings.customerCount ?? '500+',
+      businessDescription: settings.businessDescription ?? 'Handcrafted 3-inch buttons made with love in Baton Rouge. Perfect for sports teams, schools, and special celebrations.',
+    }
+    // Get footer settings - use undefined for empty arrays so component defaults are used
+    footerSettings = {
+      footerEmail: settings.footerEmail ?? 'hello@lellisdesigns.com',
+      footerLocation: settings.footerLocation ?? 'Baton Rouge, LA',
+      footerNavigation: settings.footerNavigation?.length ? settings.footerNavigation : undefined,
+      businessInstagram: settings.businessInstagram ?? 'https://instagram.com/lellisdesigns',
+    }
+    // Get features settings - use undefined for empty arrays so component defaults are used
+    featuresSettings = {
+      featuresHeading: settings.featuresHeading ?? 'Why Choose L. Ellis Designs?',
+      featuresSubheading: settings.featuresSubheading ?? 'We\'re passionate about creating buttons that celebrate your team, your school, and your special moments.',
+      featureItems: settings.featureItems?.length ? settings.featureItems : undefined,
+    }
+    // Get CTA settings
+    ctaSettings = {
+      homepageCtaHeading: settings.homepageCtaHeading ?? 'Have a Special Design in Mind?',
+      homepageCtaSubtext: settings.homepageCtaSubtext ?? 'We love bringing your ideas to life! Whether it\'s custom names, photos, or unique designs - we\'re here to help create something special.',
+      homepageCtaButton1Text: settings.homepageCtaButton1Text ?? 'Request Custom Design',
+      homepageCtaButton2Text: settings.homepageCtaButton2Text ?? 'Browse Existing Designs',
     }
   } catch (error) {
     console.error('Failed to fetch site settings:', error)
@@ -163,16 +223,7 @@ export default async function HomePage() {
               </p>
 
               {/* Social Proof */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-6">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                  <span className="text-sm text-muted-foreground ml-1">5.0</span>
-                </div>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-sm text-muted-foreground">Trusted by 500+ teams</span>
-              </div>
+              <TrustStrip rating={socialProof.customerRating} customerCount={socialProof.customerCount} className="mb-6" />
 
               {/* Pricing badges */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
@@ -198,17 +249,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <Features />
-
       {/* Featured Button Showcase */}
       {allButtons.filter(b => b.featured).length > 0 && (
-        <HomeButtonShowcase buttons={allButtons.filter(b => b.featured)} />
+        <HomeButtonShowcase
+          buttons={allButtons.filter(b => b.featured)}
+          backgroundImageUrl={homepageFeaturedBackgroundImage}
+        />
       )}
 
-      {/* Categories - Full width layout */}
+      {/* Categories */}
       <section id="categories" className="py-12 md:py-16 bg-pattern-geometric scroll-mt-20">
-        <div className="px-4 md:px-8 lg:px-12">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
               Browse Categories
@@ -224,11 +275,29 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Features Section - Why Choose L. Ellis Designs */}
+      <Features
+        featuresHeading={featuresSettings.featuresHeading}
+        featuresSubheading={featuresSettings.featuresSubheading}
+        featureItems={featuresSettings.featureItems}
+      />
+
       {/* Custom Request CTA */}
-      <CTASection />
+      <CTASection
+        homepageCtaHeading={ctaSettings.homepageCtaHeading}
+        homepageCtaSubtext={ctaSettings.homepageCtaSubtext}
+        homepageCtaButton1Text={ctaSettings.homepageCtaButton1Text}
+        homepageCtaButton2Text={ctaSettings.homepageCtaButton2Text}
+      />
 
       {/* Footer */}
-      <Footer />
+      <Footer
+        businessDescription={socialProof.businessDescription}
+        footerEmail={footerSettings.footerEmail}
+        footerLocation={footerSettings.footerLocation}
+        footerNavigation={footerSettings.footerNavigation}
+        businessInstagram={footerSettings.businessInstagram}
+      />
     </main>
   )
 }

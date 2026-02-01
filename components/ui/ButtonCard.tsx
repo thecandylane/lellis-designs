@@ -34,11 +34,12 @@ function ButtonCard({ button, onClick, accentColor, featured }: ButtonCardProps)
 
         <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 rounded-full overflow-hidden border-4 border-white shadow-lg group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-2xl transition-all duration-300 ease-out">
           <Image
-            src={button.image_url}
+            src={button.image_card || button.image_thumbnail || button.image_url}
             alt={button.name}
             fill
             className="object-cover"
             sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 176px, 192px"
+            unoptimized
           />
 
           {/* Subtle overlay on hover */}

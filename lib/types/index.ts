@@ -35,6 +35,9 @@ export type Button = {
   description: string | null
   tags: { tag: string }[] | null
   image_url: string
+  // Pre-generated image sizes from Payload (avoid Next.js re-optimization)
+  image_thumbnail?: string // 200x200
+  image_card?: string      // 400x400
   price?: number | null
   lead_time_days: number
   customization: 'as_is' | 'customizable'
@@ -47,6 +50,7 @@ export type CartItem = {
   buttonId: string
   name: string
   imageUrl: string
+  imageThumbnail?: string // 200x200 pre-sized version
   price: number
   quantity: number
   personName?: string

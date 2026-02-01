@@ -278,6 +278,7 @@ function SortableButtonCard({ button, categories, isSelected, onToggleSelect }: 
             alt={button.name}
             fill
             className="object-contain p-2"
+            unoptimized
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">

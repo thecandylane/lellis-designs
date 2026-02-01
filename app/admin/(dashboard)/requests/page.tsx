@@ -476,6 +476,7 @@ function RequestCard({ request, collapsed = false }: { request: CustomRequest; c
                         fill
                         className="object-cover"
                         sizes="120px"
+                        unoptimized
                       />
                     </div>
                     {ref.description && (

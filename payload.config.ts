@@ -16,6 +16,7 @@ import {
   CustomRequests,
   Ambassadors,
   ContactRequests,
+  LegalPages,
 } from './collections'
 import { SiteSettings } from './globals'
 
@@ -47,6 +48,7 @@ export default buildConfig({
     CustomRequests,
     Ambassadors,
     ContactRequests,
+    LegalPages,
   ],
   globals: [SiteSettings],
   plugins: [
