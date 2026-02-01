@@ -48,6 +48,7 @@ export default function CategoryCard({
               fill
               className="object-cover"
               sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 224px"
+              unoptimized
             />
           ) : (
             /* Gradient fallback using category colors */

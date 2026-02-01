@@ -34,12 +34,17 @@ function toButton(doc: PayloadButton): Button {
   const categoryId = typeof doc.category === 'object'
     ? String(doc.category?.id)
     : doc.category ? String(doc.category) : null
+
+  const imageObj = typeof doc.image === 'object' && doc.image ? doc.image as any : null
+
   return {
     id: String(doc.id),
     name: doc.name,
     description: doc.description || null,
     tags: doc.tags || null,
-    image_url: typeof doc.image === 'object' ? doc.image?.url || '' : '',
+    image_url: imageObj?.url || '',
+    image_thumbnail: imageObj?.sizes?.thumbnail?.url,
+    image_card: imageObj?.sizes?.card?.url,
     category_id: categoryId,
     price: doc.price ?? null,
     lead_time_days: doc.leadTimeDays ?? 7,

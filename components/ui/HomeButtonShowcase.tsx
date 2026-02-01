@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import type { Button as ButtonType } from '@/lib/types'
 import ButtonCard from './ButtonCard'
@@ -10,11 +11,13 @@ import { cn } from '@/lib/utils'
 
 type Props = {
   buttons: ButtonType[]
+  backgroundImageUrl?: string | null
 }
 
-export default function HomeButtonShowcase({ buttons }: Props) {
+export default function HomeButtonShowcase({ buttons, backgroundImageUrl }: Props) {
   const [selectedButton, setSelectedButton] = useState<ButtonType | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const hasBackgroundImage = backgroundImageUrl && backgroundImageUrl.trim() !== ''
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -27,7 +30,31 @@ export default function HomeButtonShowcase({ buttons }: Props) {
   }
 
   return (
-    <section className="py-12 md:py-16 bg-gradient-to-b from-background to-muted/30">
+    <section className={cn(
+      "py-12 md:py-16 relative",
+      !hasBackgroundImage && "bg-gradient-to-b from-background to-muted/30"
+    )}>
+      {/* Background Image */}
+      {hasBackgroundImage && (
+        <>
+          <div className="absolute inset-0 -z-20 overflow-hidden">
+            <Image
+              src={backgroundImageUrl}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="100vw"
+              unoptimized
+              priority
+            />
+          </div>
+          {/* Overlay for text legibility */}
+          <div
+            className="absolute inset-0 -z-10"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}
+          />
+        </>
+      )}
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-2 rounded-full mb-4">

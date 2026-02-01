@@ -32,6 +32,7 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
       buttonId: button.id,
       name: button.name,
       imageUrl: button.image_url,
+      imageThumbnail: button.image_thumbnail,
       price: button.price ?? pricing.singlePrice,
       quantity,
       ...(isCustomizable && personName ? { personName } : {}),
@@ -76,11 +77,12 @@ export default function ButtonModal({ button, onClose, accentColor }: ButtonModa
           {/* Image section */}
           <div className="relative aspect-square md:w-1/2 bg-muted flex-shrink-0">
             <Image
-              src={button.image_url}
+              src={button.image_card || button.image_url}
               alt={button.name}
               fill
               className="object-cover md:rounded-l-lg md:rounded-tr-none rounded-t-lg"
               sizes="(max-width: 768px) 100vw, 384px"
+              unoptimized
             />
           </div>
 

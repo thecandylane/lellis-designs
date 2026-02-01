@@ -1,3 +1,6 @@
+'use client'
+
+import { motion } from 'framer-motion'
 import type { Category } from '@/lib/types'
 import CategoryCard from './CategoryCard'
 import { cn } from '@/lib/utils'
@@ -35,15 +38,26 @@ export default function CategoryGrid({
       "w-full flex flex-wrap justify-center lg:justify-between gap-8 sm:gap-10 md:gap-12 lg:gap-8",
       className
     )}>
-      {categories.map(({ category, href, subcategoryCount, buttonCount, previewImage }) => (
-        <CategoryCard
+      {categories.map(({ category, href, subcategoryCount, buttonCount, previewImage }, index) => (
+        <motion.div
           key={category.id}
-          category={category}
-          href={href}
-          subcategoryCount={subcategoryCount}
-          buttonCount={buttonCount}
-          previewImage={previewImage}
-        />
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{
+            duration: 0.5,
+            delay: index * 0.05,
+            ease: "easeOut"
+          }}
+        >
+          <CategoryCard
+            category={category}
+            href={href}
+            subcategoryCount={subcategoryCount}
+            buttonCount={buttonCount}
+            previewImage={previewImage}
+          />
+        </motion.div>
       ))}
     </div>
   )

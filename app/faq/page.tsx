@@ -1,51 +1,45 @@
 import Link from 'next/link'
 import { ArrowLeft, HelpCircle, ChevronDown } from 'lucide-react'
 import { Footer } from '@/components/home/Footer'
+import { getPayload } from '@/lib/payload'
 
-const faqs = [
-  {
-    question: 'What size are the buttons?',
-    answer: 'All our buttons are 3 inches in diameter - the perfect size for visibility at events, games, and celebrations.',
-  },
-  {
-    question: 'How do I place a custom order?',
-    answer: 'Visit our Custom Request page to submit your design idea. You can upload an image or describe what you\'re looking for, and we\'ll work with you to create the perfect button.',
-  },
-  {
-    question: 'What\'s the turnaround time for orders?',
-    answer: 'Standard orders ship within 2-3 business days. Bulk orders (50+ buttons) may take 3-5 business days. Custom designs typically take 5-7 business days, which includes time for design approval.',
-  },
-  {
-    question: 'Do you offer bulk discounts?',
-    answer: 'Yes! We offer tiered pricing for larger orders. Orders of 100-199 buttons receive a discount, and orders of 200+ buttons receive an even better rate. Check our pricing on any product page.',
-  },
-  {
-    question: 'Can I pick up my order locally?',
-    answer: 'Absolutely! We offer free local pickup in Baton Rouge, Louisiana. Just select the pickup option at checkout, and we\'ll email you when your order is ready.',
-  },
-  {
-    question: 'What payment methods do you accept?',
-    answer: 'We accept all major credit cards (Visa, Mastercard, American Express, Discover) through our secure checkout powered by Stripe.',
-  },
-  {
-    question: 'Can I see a proof before my custom order is made?',
-    answer: 'Yes! For custom orders, we\'ll send you a digital proof to approve before we start production. We want to make sure you\'re 100% happy with the design.',
-  },
-  {
-    question: 'What if I\'m not satisfied with my order?',
-    answer: 'Your satisfaction is important to us. If there\'s an issue with your order, please contact us within 7 days of receiving it, and we\'ll work to make it right.',
-  },
-  {
-    question: 'Do you ship outside of Louisiana?',
-    answer: 'Yes, we ship nationwide via UPS Ground. Shipping is a flat rate of $8.00 regardless of order size.',
-  },
-  {
-    question: 'Can I order buttons for a school or team?',
-    answer: 'Definitely! We specialize in buttons for schools, sports teams, and organizations. Check out our Sports and Schools categories for popular designs, or submit a custom request for your specific needs.',
-  },
-]
+export const dynamic = 'force-dynamic'
 
-export default function FAQPage() {
+type FAQItem = {
+  question: string
+  answer: string
+  order?: number
+}
+
+export default async function FAQPage() {
+  // Fetch FAQ content from site settings
+  let faqContent = {
+    faqPageTitle: 'Frequently Asked Questions',
+    faqPageSubtitle: 'Common questions about our buttons',
+    faqIntroText: 'Here are answers to the most common questions we receive. Can\'t find what you\'re looking for? Feel free to contact us.',
+    faqItems: [] as FAQItem[],
+    faqContactPrompt: 'Still Have Questions?',
+    faqContactDescription: 'We\'re here to help! Reach out and we\'ll get back to you as soon as possible.',
+  }
+
+  try {
+    const payload = await getPayload()
+    const settings = await payload.findGlobal({ slug: 'site-settings' })
+
+    faqContent = {
+      faqPageTitle: settings.faqPageTitle || faqContent.faqPageTitle,
+      faqPageSubtitle: settings.faqPageSubtitle || faqContent.faqPageSubtitle,
+      faqIntroText: settings.faqIntroText || faqContent.faqIntroText,
+      faqItems: (settings.faqItems as FAQItem[]) || [],
+      faqContactPrompt: settings.faqContactPrompt || faqContent.faqContactPrompt,
+      faqContactDescription: settings.faqContactDescription || faqContent.faqContactDescription,
+    }
+  } catch (error) {
+    console.error('Failed to fetch FAQ content:', error)
+  }
+
+  // Sort FAQ items by order field
+  const sortedFaqs = faqContent.faqItems.sort((a, b) => (a.order || 0) - (b.order || 0))
   return (
     <main className="min-h-screen bg-background">
       {/* Header */}
@@ -55,8 +49,8 @@ export default function FAQPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Frequently Asked Questions</h1>
-            <p className="text-sm text-muted-foreground">Common questions about our buttons</p>
+            <h1 className="text-xl font-semibold text-foreground">{faqContent.faqPageTitle}</h1>
+            <p className="text-sm text-muted-foreground">{faqContent.faqPageSubtitle}</p>
           </div>
         </div>
       </header>
@@ -70,15 +64,16 @@ export default function FAQPage() {
           <div>
             <h2 className="font-semibold text-foreground mb-1">Got Questions?</h2>
             <p className="text-sm text-muted-foreground">
-              Here are answers to the most common questions we receive. Can&apos;t find what you&apos;re looking for? Feel free to{' '}
-              <Link href="/contact" className="text-primary hover:underline">contact us</Link>.
+              {faqContent.faqIntroText.split('contact us')[0]}
+              <Link href="/contact" className="text-primary hover:underline">contact us</Link>
+              {faqContent.faqIntroText.includes('contact us') ? '.' : ''}
             </p>
           </div>
         </div>
 
         {/* FAQ List */}
         <div className="space-y-4">
-          {faqs.map((faq, index) => (
+          {sortedFaqs.map((faq, index) => (
             <details
               key={index}
               className="group bg-card rounded-xl border border-border overflow-hidden"
@@ -96,9 +91,9 @@ export default function FAQPage() {
 
         {/* Still Have Questions */}
         <section className="mt-12 bg-card rounded-xl border border-border p-6 text-center">
-          <h3 className="font-semibold text-foreground mb-2">Still Have Questions?</h3>
+          <h3 className="font-semibold text-foreground mb-2">{faqContent.faqContactPrompt}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            We&apos;re here to help! Reach out and we&apos;ll get back to you as soon as possible.
+            {faqContent.faqContactDescription}
           </p>
           <Link
             href="/contact"

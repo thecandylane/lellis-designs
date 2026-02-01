@@ -22,11 +22,12 @@ function CartItem({ item, pricePerItem }: CartItemProps) {
     <div className="flex gap-4 p-4 bg-card rounded-xl border border-border shadow-sm">
       <div className="w-20 h-20 relative shrink-0 bg-muted rounded-lg overflow-hidden">
         <Image
-          src={item.imageUrl}
+          src={item.imageThumbnail || item.imageUrl}
           alt={item.name}
           fill
           className="object-cover"
           sizes="80px"
+          unoptimized
         />
       </div>
 

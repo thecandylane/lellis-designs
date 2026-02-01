@@ -5,13 +5,12 @@ import { FaInstagram } from "react-icons/fa";
 
 import { cn } from "@/lib/utils";
 
-const sections = [
+const defaultSections = [
   {
     title: "Shop",
     links: [
-      { name: "All Buttons", href: "#categories" },
-      { name: "Sports", href: "/category/sports" },
-      { name: "Schools", href: "/category/schools" },
+      { name: "All Buttons", href: "/" },
+      { name: "Schools", href: "/category/schools-teams-clubs" },
       { name: "Custom Request", href: "/custom-request" },
     ],
   },
@@ -32,11 +31,38 @@ const sections = [
   },
 ];
 
-interface FooterProps {
-  className?: string;
+type FooterLink = {
+  label: string;
+  href: string;
 }
 
-const Footer = ({ className }: FooterProps) => {
+type FooterSection = {
+  sectionTitle: string;
+  links?: FooterLink[];
+}
+
+interface FooterProps {
+  className?: string;
+  businessDescription?: string;
+  footerEmail?: string;
+  footerLocation?: string;
+  footerNavigation?: FooterSection[];
+  businessInstagram?: string;
+}
+
+const Footer = ({
+  className,
+  businessDescription,
+  footerEmail = 'hello@lellisdesigns.com',
+  footerLocation = 'Baton Rouge, LA',
+  footerNavigation,
+  businessInstagram = 'https://instagram.com/lellisdesigns'
+}: FooterProps) => {
+  // Map CMS navigation to component format
+  const sections = footerNavigation?.map(section => ({
+    title: section.sectionTitle,
+    links: section.links?.map(link => ({ name: link.label, href: link.href })) || []
+  })) || defaultSections;
   return (
     <footer className={cn("bg-primary text-primary-foreground", className)}>
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
@@ -59,20 +85,19 @@ const Footer = ({ className }: FooterProps) => {
               </div>
             </Link>
             <p className="text-primary-foreground/80 text-sm leading-relaxed mb-6 max-w-sm">
-              Handcrafted 3-inch buttons made with love in Baton Rouge. Perfect for sports teams,
-              schools, and special celebrations.
+              {businessDescription || 'Handcrafted 3-inch buttons made with love in Baton Rouge. Perfect for sports teams, schools, and special celebrations.'}
             </p>
 
             {/* Contact Info */}
             <div className="space-y-2 text-sm text-primary-foreground/80">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-secondary" />
-                <span>Baton Rouge, LA</span>
+                <span>{footerLocation}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-secondary" />
-                <a href="mailto:hello@lellisdesigns.com" className="hover:text-secondary transition-colors">
-                  hello@lellisdesigns.com
+                <a href={`mailto:${footerEmail}`} className="hover:text-secondary transition-colors">
+                  {footerEmail}
                 </a>
               </div>
             </div>
@@ -80,7 +105,7 @@ const Footer = ({ className }: FooterProps) => {
             {/* Social Links */}
             <div className="flex gap-3 mt-6">
               <a
-                href="https://instagram.com/lellisdesigns"
+                href={businessInstagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex size-10 items-center justify-center rounded-full bg-primary-foreground/10 transition-colors hover:bg-secondary hover:text-secondary-foreground"

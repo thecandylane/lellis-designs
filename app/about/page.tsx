@@ -1,8 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Heart, MapPin, Sparkles, Award } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { getPayload } from '@/lib/payload'
 import { Footer } from '@/components/home/Footer'
+import { getIcon } from '@/lib/iconMapping'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,13 @@ interface GalleryImage {
     alt?: string
   }
   caption?: string
+}
+
+type ValueCard = {
+  title: string
+  description: string
+  icon: string
+  colorClass: string
 }
 
 export default async function AboutPage() {
@@ -24,6 +32,11 @@ export default async function AboutPage() {
     aboutStory: '',
     galleryImages: [] as GalleryImage[],
     instagramUrl: '',
+    aboutHeroBackgroundImage: null as string | null,
+    aboutValueCards: [] as ValueCard[],
+    aboutCtaHeading: 'Ready to Create Something Special?',
+    aboutCtaButton1Text: 'Browse Buttons',
+    aboutCtaButton2Text: 'Custom Order',
   }
 
   try {
@@ -41,6 +54,13 @@ export default async function AboutPage() {
       aboutStory: settings.aboutStory || '',
       galleryImages: (settings.galleryImages as GalleryImage[]) || [],
       instagramUrl: settings.instagramUrl || '',
+      aboutHeroBackgroundImage: typeof settings.aboutHeroBackgroundImage === 'object' && settings.aboutHeroBackgroundImage?.url
+        ? settings.aboutHeroBackgroundImage.url
+        : null,
+      aboutValueCards: (settings.aboutValueCards as ValueCard[]) || [],
+      aboutCtaHeading: settings.aboutCtaHeading || aboutContent.aboutCtaHeading,
+      aboutCtaButton1Text: settings.aboutCtaButton1Text || aboutContent.aboutCtaButton1Text,
+      aboutCtaButton2Text: settings.aboutCtaButton2Text || aboutContent.aboutCtaButton2Text,
     }
   } catch (error) {
     console.error('Failed to fetch about content:', error)
@@ -62,7 +82,23 @@ export default async function AboutPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-glow py-12 md:py-16">
+      <section className={`py-12 md:py-16 relative ${!aboutContent.aboutHeroBackgroundImage ? 'bg-glow' : ''}`}>
+        {/* Background Image */}
+        {aboutContent.aboutHeroBackgroundImage && (
+          <>
+            <div className="absolute inset-0 -z-20 overflow-hidden">
+              <Image
+                src={aboutContent.aboutHeroBackgroundImage}
+                alt=""
+                fill
+                className="object-cover"
+                priority
+                sizes="100vw"
+              />
+            </div>
+            <div className="absolute inset-0 -z-10" style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }} />
+          </>
+        )}
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {aboutContent.aboutTitle}
@@ -74,39 +110,28 @@ export default async function AboutPage() {
       </section>
 
       {/* Values/Highlights Section */}
-      <section className="py-12 bg-background">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-card rounded-xl p-6 border border-border text-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Handmade with Love</h3>
-              <p className="text-sm text-muted-foreground">
-                Every button is crafted with care and attention to detail
-              </p>
-            </div>
-            <div className="bg-card rounded-xl p-6 border border-border text-center">
-              <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-6 h-6 text-secondary" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Local to Baton Rouge</h3>
-              <p className="text-sm text-muted-foreground">
-                Proudly serving Louisiana and shipping nationwide
-              </p>
-            </div>
-            <div className="bg-card rounded-xl p-6 border border-border text-center">
-              <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Award className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Quality Materials</h3>
-              <p className="text-sm text-muted-foreground">
-                Premium 3-inch buttons built to last
-              </p>
+      {aboutContent.aboutValueCards.length > 0 && (
+        <section className="py-12 bg-background">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="grid md:grid-cols-3 gap-6">
+              {aboutContent.aboutValueCards.map((card, index) => {
+                const IconComponent = getIcon(card.icon);
+                return (
+                  <div key={index} className="bg-card rounded-xl p-6 border border-border text-center">
+                    <div className={`w-12 h-12 ${card.colorClass} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-semibold text-foreground mb-2">{card.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {card.description}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Story Section */}
       <section id="story" className="py-12 md:py-16 bg-muted/30 scroll-mt-20">
@@ -205,7 +230,7 @@ export default async function AboutPage() {
       <section className="py-12 bg-primary text-primary-foreground">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Ready to Create Something Special?
+            {aboutContent.aboutCtaHeading}
           </h2>
           <p className="text-primary-foreground/80 mb-6 max-w-xl mx-auto">
             Whether you need buttons for your team, school, or special event, we&apos;d love to help bring your vision to life.
@@ -215,13 +240,13 @@ export default async function AboutPage() {
               href="/"
               className="inline-flex items-center px-6 py-3 bg-white text-primary font-semibold rounded-lg hover:bg-white/90 transition-colors"
             >
-              Browse Buttons
+              {aboutContent.aboutCtaButton1Text}
             </Link>
             <Link
               href="/custom-request"
               className="inline-flex items-center px-6 py-3 bg-primary-foreground/10 text-primary-foreground font-semibold rounded-lg border-2 border-primary-foreground/30 hover:bg-primary-foreground/20 transition-colors"
             >
-              Custom Order
+              {aboutContent.aboutCtaButton2Text}
             </Link>
           </div>
         </div>

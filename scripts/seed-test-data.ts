@@ -468,7 +468,7 @@ async function main() {
   }
 
   // Also create some seasonal themes for testing
-  console.log('\n🎨 Adding seasonal themes to site settings...')
+  console.log('\n🎨 Adding seasonal themes and FAQ items to site settings...')
   try {
     await payload.updateGlobal({
       slug: 'site-settings',
@@ -501,11 +501,23 @@ async function main() {
         ],
         // Don't activate any theme by default
         activeTheme: '',
+        faqItems: [
+          { question: 'What size are the buttons?', answer: 'All our buttons are 3 inches in diameter - the perfect size for visibility at events, games, and celebrations.', order: 1 },
+          { question: 'How do I place a custom order?', answer: 'Visit our Custom Request page to submit your design idea. You can upload an image or describe what you\'re looking for, and we\'ll work with you to create the perfect button.', order: 2 },
+          { question: 'What\'s the turnaround time for orders?', answer: 'Standard orders ship within 2-3 business days. Bulk orders (50+ buttons) may take 3-5 business days. Custom designs typically take 5-7 business days, which includes time for design approval.', order: 3 },
+          { question: 'Do you offer bulk discounts?', answer: 'Yes! We offer tiered pricing for larger orders. Orders of 100-199 buttons receive a discount, and orders of 200+ buttons receive an even better rate. Check our pricing on any product page.', order: 4 },
+          { question: 'Can I pick up my order locally?', answer: 'Absolutely! We offer free local pickup in Baton Rouge, Louisiana. Just select the pickup option at checkout, and we\'ll email you when your order is ready.', order: 5 },
+          { question: 'What payment methods do you accept?', answer: 'We accept all major credit cards (Visa, Mastercard, American Express, Discover) through our secure checkout powered by Stripe.', order: 6 },
+          { question: 'Can I see a proof before my custom order is made?', answer: 'Yes! For custom orders, we\'ll send you a digital proof to approve before we start production. We want to make sure you\'re 100% happy with the design.', order: 7 },
+          { question: 'What if I\'m not satisfied with my order?', answer: 'Your satisfaction is important to us. If there\'s an issue with your order, please contact us within 7 days of receiving it, and we\'ll work to make it right.', order: 8 },
+          { question: 'Do you ship outside of Louisiana?', answer: 'Yes, we ship nationwide via UPS Ground. Shipping is a flat rate of $8.00 regardless of order size.', order: 9 },
+          { question: 'Can I order buttons for a school or team?', answer: 'Definitely! We specialize in buttons for schools, sports teams, and organizations. Check out our Sports and Schools categories for popular designs, or submit a custom request for your specific needs.', order: 10 },
+        ],
       },
     })
-    console.log('  ✅ Added 3 seasonal themes (LSU Game Day, Mardi Gras, Christmas)')
+    console.log('  ✅ Added FAQ items and seasonal themes')
   } catch (error) {
-    console.error('  ❌ Error adding seasonal themes:', error)
+    console.error('  ❌ Error adding FAQ items and seasonal themes:', error)
   }
 
   // Summary
