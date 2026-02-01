@@ -1,6 +1,14 @@
-import { serializeLexical } from '@payloadcms/richtext-lexical/react'
+import { convertLexicalNodesToJSX } from '@payloadcms/richtext-lexical/react'
 
-export async function renderRichText(richTextData: any) {
+export function renderRichText(richTextData: any) {
   if (!richTextData) return null
-  return await serializeLexical({ editorState: richTextData })
+
+  try {
+    return convertLexicalNodesToJSX({
+      nodes: richTextData?.root?.children || [],
+    })
+  } catch (error) {
+    console.error('Failed to render rich text:', error)
+    return null
+  }
 }
